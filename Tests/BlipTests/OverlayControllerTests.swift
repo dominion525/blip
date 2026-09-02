@@ -20,7 +20,7 @@ final class OverlayControllerTests: XCTestCase {
         super.tearDown()
     }
 
-    private func makeController(autoHide: TimeInterval? = 1.2) -> OverlayController {
+    private func makeController(autoHide: TimeInterval = 1.2) -> OverlayController {
         OverlayController(store: store, autoHideSeconds: autoHide)
     }
 
@@ -155,19 +155,11 @@ final class OverlayControllerTests: XCTestCase {
         XCTAssertTrue(controller.windows.allSatisfy { !$0.isVisible })
     }
 
-    func testToggleModeWhenAutoHideIsNil() {
-        let controller = makeController(autoHide: nil)
-        controller.toggle()
-        XCTAssertTrue(controller.isVisible)
-        controller.toggle()
-        XCTAssertFalse(controller.isVisible, "a second trigger hides it")
-    }
-
-    func testToggleAlwaysShowsWhenAutoHideIsSet() {
+    func testTriggerWhileVisibleKeepsShowing() {
         let controller = makeController(autoHide: 1.2)
-        controller.toggle()
-        controller.toggle()
-        XCTAssertTrue(controller.isVisible, "in auto-hide mode a second trigger does not hide it")
+        controller.trigger()
+        controller.trigger()
+        XCTAssertTrue(controller.isVisible, "triggering while visible keeps it visible")
         controller.hide()
     }
 }

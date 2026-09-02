@@ -28,8 +28,8 @@ enum Config {
     static let ringColor: NSColor = .systemYellow
     /// Ring line width, in points
     static let ringWidth: CGFloat = 4
-    /// Seconds until the effect hides itself. Nil switches to toggle mode, where pressing the hotkey again hides it
-    static let autoHideSeconds: TimeInterval? = 1.2
+    /// Seconds until the effect hides itself
+    static let autoHideSeconds: TimeInterval = 1.2
     /// Cursor tracking interval, in seconds
     static let trackingInterval: TimeInterval = 1.0 / 60.0
     /// Zoom: seconds to shrink from the whole screen to the spot radius
@@ -128,7 +128,7 @@ final class OverlayWindow: NSWindow {
 /// Owns one window per display and handles showing, hiding, cursor tracking, and auto-hide
 final class OverlayController {
     private let store: SettingsStore
-    private let autoHideSeconds: TimeInterval?
+    private let autoHideSeconds: TimeInterval
     private(set) var windows: [OverlayWindow] = []
     private var trackingTimer: Timer?
     private var autoHideTimer: Timer?
@@ -138,8 +138,8 @@ final class OverlayController {
     private var shownAt: TimeInterval = 0
     private(set) var isVisible = false
 
-    /// `store` supplies the effect setting; `autoHideSeconds` is the auto-hide delay (nil for toggle mode). Defaults come from the app settings and Config
-    init(store: SettingsStore = Settings.store, autoHideSeconds: TimeInterval? = Config.autoHideSeconds) {
+    /// `store` supplies the effect setting; `autoHideSeconds` is the auto-hide delay. Defaults come from the app settings and Config
+    init(store: SettingsStore = Settings.store, autoHideSeconds: TimeInterval = Config.autoHideSeconds) {
         self.store = store
         self.autoHideSeconds = autoHideSeconds
         currentEffect = store.effect
@@ -152,13 +152,9 @@ final class OverlayController {
         )
     }
 
-    /// Entry point for the hotkey and the menu. In toggle mode (autoHideSeconds nil) it hides while visible; otherwise it shows
-    func toggle() {
-        if isVisible && autoHideSeconds == nil {
-            hide()
-        } else {
-            show()
-        }
+    /// Entry point for the hotkey, the double-tap, and the menu. Triggering while visible extends the time until it hides
+    func trigger() {
+        show()
     }
 
     func show() {
@@ -261,8 +257,7 @@ final class OverlayController {
     private func scheduleAutoHide() {
         autoHideTimer?.invalidate()
         autoHideTimer = nil
-        guard let seconds = autoHideSeconds else { return }
-        let timer = Timer(timeInterval: seconds, repeats: false) { [weak self] _ in
+        let timer = Timer(timeInterval: autoHideSeconds, repeats: false) { [weak self] _ in
             self?.hide()
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -287,7 +282,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let injectedModifierTap: ModifierTapMonitoring?
     private lazy var modifierTap: ModifierTapMonitoring = injectedModifierTap
         ?? ModifierTapMonitor(interval: Config.doubleTapInterval ?? 0.3) { [weak self] in
-            self?.overlay.toggle()
+            self?.overlay.trigger()
         }
 
     /// `store` is the settings storage; `modifierTap` is the double-tap monitor (nil creates the real one; tests inject a fake)
@@ -304,7 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setUpStatusItem()
 
         KeyboardShortcuts.onKeyDown(for: .showSpotlight) { [weak self] in
-            self?.overlay.toggle()
+            self?.overlay.trigger()
         }
         NSLog("Blip: hotkey %@", KeyboardShortcuts.getShortcut(for: .showSpotlight).map { String(describing: $0) } ?? "(none)")
 
@@ -375,7 +370,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func triggerSpotlight() {
-        overlay.toggle()
+        overlay.trigger()
     }
 
     @objc func showSettings() {

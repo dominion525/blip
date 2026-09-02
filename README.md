@@ -98,7 +98,7 @@ spotRadius               55        Spot radius (pt)
 dimOpacity               0.55      Opacity of the dim layer
 ringColor                yellow    Ring color
 ringWidth                4         Ring line width (pt)
-autoHideSeconds          1.2       Seconds until the effect hides; nil keeps it until triggered again
+autoHideSeconds          1.2       Seconds until the effect hides
 trackingInterval         1/60      Cursor tracking interval (s)
 zoomDuration             0.35      Zoom duration (s)
 zoomOvershoot            0.15      Zoom overshoot as a fraction of the spot radius
