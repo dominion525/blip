@@ -32,7 +32,20 @@ An ad hoc signature changes on every rebuild, so the Input Monitoring permission
 swift test
 ```
 
-The AppKit-free logic (coordinate math, double-tap detection, effect timing) lives in BlipCore and is verified with XCTest. Drawing and key monitoring are checked by hand.
+The tests are split across two targets.
+
+- BlipCoreTests: the AppKit-free logic (coordinate math, double-tap detection, effect timing, modifier key codes)
+- BlipTests: the app itself. Each effect is drawn into an offscreen bitmap and checked pixel by pixel; overlay window configuration and rebuilds, settings persistence, the settings window controls, the menus, the launch sequence, and the consistency of the string tables are covered
+
+Creating the event tap and obtaining the Input Monitoring permission depend on a grant the user makes in an OS dialog, so they are out of scope for the tests and are checked by hand. The decision that turns tap events into a double-tap is a pure function and is covered.
+
+Coverage is measured with:
+
+```
+swift test --enable-code-coverage
+xcrun llvm-cov report .build/debug/BlipPackageTests.xctest/Contents/MacOS/BlipPackageTests \
+  -instr-profile .build/debug/codecov/default.profdata -ignore-filename-regex='\.build/|Tests/'
+```
 
 ## Usage
 
