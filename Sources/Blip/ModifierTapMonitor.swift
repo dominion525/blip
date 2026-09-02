@@ -5,7 +5,12 @@
 import AppKit
 import BlipCore
 
-final class ModifierTapMonitor {
+/// The interface AppDelegate uses to drive the double-tap monitor (tests substitute a fake)
+protocol ModifierTapMonitoring: AnyObject {
+    func setModifier(_ modifier: ModifierKey)
+}
+
+final class ModifierTapMonitor: ModifierTapMonitoring {
     private let interval: TimeInterval
     private let onDoubleTap: () -> Void
     private var modifier: ModifierKey = .off

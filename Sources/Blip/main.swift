@@ -280,12 +280,24 @@ extension KeyboardShortcuts.Name {
 // MARK: - AppDelegate
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var statusItem: NSStatusItem?
-    private let overlay = OverlayController()
-    private lazy var modifierTap = ModifierTapMonitor(interval: Config.doubleTapInterval ?? 0.3) { [weak self] in
-        self?.overlay.toggle()
+    private let store: SettingsStore
+    private(set) var statusItem: NSStatusItem?
+    let overlay: OverlayController
+    let settings: SettingsWindowController
+    private let injectedModifierTap: ModifierTapMonitoring?
+    private lazy var modifierTap: ModifierTapMonitoring = injectedModifierTap
+        ?? ModifierTapMonitor(interval: Config.doubleTapInterval ?? 0.3) { [weak self] in
+            self?.overlay.toggle()
+        }
+
+    /// `store` is the settings storage; `modifierTap` is the double-tap monitor (nil creates the real one; tests inject a fake)
+    init(store: SettingsStore, modifierTap: ModifierTapMonitoring? = nil) {
+        self.store = store
+        self.overlay = OverlayController(store: store)
+        self.settings = SettingsWindowController(store: store)
+        self.injectedModifierTap = modifierTap
+        super.init()
     }
-    private lazy var settings = SettingsWindowController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setUpMainMenu()
@@ -299,7 +311,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.onDoubleTapModifierChanged = { [weak self] modifier in
             self?.setDoubleTap(modifier: modifier)
         }
-        setDoubleTap(modifier: Settings.store.doubleTapModifier)
+        setDoubleTap(modifier: store.doubleTapModifier)
     }
 
     /// Switches the modifier watched for double-taps. Called at launch and from the settings window
@@ -362,11 +374,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return mainMenu
     }
 
-    @objc private func triggerSpotlight() {
+    @objc func triggerSpotlight() {
         overlay.toggle()
     }
 
-    @objc private func showSettings() {
+    @objc func showSettings() {
         settings.show()
     }
 
@@ -392,6 +404,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
-let delegate = AppDelegate()
+let delegate = AppDelegate(store: Settings.store)
 app.delegate = delegate
 app.run()

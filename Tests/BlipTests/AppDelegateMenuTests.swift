@@ -3,7 +3,7 @@ import XCTest
 
 final class AppDelegateMenuTests: XCTestCase {
     func testStatusMenuHasTheExpectedItemsInOrder() {
-        let menu = AppDelegate().makeStatusMenu()
+        let menu = AppDelegate(store: SettingsStore(defaults: UserDefaults(suiteName: "local.blip.tests.menu")!)).makeStatusMenu()
         XCTAssertEqual(menu.items.count, 6)
         XCTAssertEqual(menu.items[0].title, L("menu.showSpotlight"))
         XCTAssertTrue(menu.items[1].isSeparatorItem)
@@ -14,7 +14,7 @@ final class AppDelegateMenuTests: XCTestCase {
     }
 
     func testStatusMenuShortcuts() {
-        let menu = AppDelegate().makeStatusMenu()
+        let menu = AppDelegate(store: SettingsStore(defaults: UserDefaults(suiteName: "local.blip.tests.menu")!)).makeStatusMenu()
         XCTAssertEqual(menu.items[2].keyEquivalent, ",")
         XCTAssertEqual(menu.items[2].keyEquivalentModifierMask, .command)
         XCTAssertEqual(menu.items[5].keyEquivalent, "q")
@@ -22,7 +22,7 @@ final class AppDelegateMenuTests: XCTestCase {
     }
 
     func testStatusMenuItemsTargetTheDelegate() {
-        let delegate = AppDelegate()
+        let delegate = AppDelegate(store: SettingsStore(defaults: UserDefaults(suiteName: "local.blip.tests.menu")!))
         let menu = delegate.makeStatusMenu()
         for index in [0, 2, 3] {
             XCTAssertTrue(menu.items[index].target === delegate, menu.items[index].title)
@@ -32,7 +32,7 @@ final class AppDelegateMenuTests: XCTestCase {
 
     /// The invisible main menu that makes ⌘, and ⌘Q work on the settings window
     func testMainMenuProvidesSettingsAndQuitShortcuts() throws {
-        let menu = AppDelegate().makeMainMenu()
+        let menu = AppDelegate(store: SettingsStore(defaults: UserDefaults(suiteName: "local.blip.tests.menu")!)).makeMainMenu()
         XCTAssertEqual(menu.items.count, 1)
         let appMenu = try XCTUnwrap(menu.items[0].submenu)
         XCTAssertEqual(appMenu.items.count, 3)
