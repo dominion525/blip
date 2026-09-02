@@ -3,7 +3,7 @@
 // Layout (least dependent first)
 //   Config            Drawing and timing defaults. The hotkey and effect choice live in the settings window (UserDefaults)
 //   Geometry          Coordinate conversion and display matching (BlipCore/Geometry.swift, pure functions)
-//   SpotlightView     Draws the dim layer and the spot
+//   OverlayView       One drawing surface per screen; delegates drawing to EffectRenderer (EffectRenderer.swift)
 //   OverlayWindow     Borderless, click-through window shown on every Space
 //   OverlayController Per-display windows, cursor tracking, auto-hide
 //   DoubleTapTracker  Modifier double-tap detection (BlipCore/DoubleTap.swift, pure state machine)
@@ -32,42 +32,54 @@ enum Config {
     static let autoHideSeconds: TimeInterval? = 1.2
     /// Cursor tracking interval, in seconds
     static let trackingInterval: TimeInterval = 1.0 / 60.0
+    /// Focus Lines: number of wedges
+    static let focusLinesCount = 150
+    /// Focus Lines: clear radius around the cursor, in points; wedges start here
+    static let focusLinesInnerRadius: CGFloat = 80
+    /// Focus Lines: jitter of the wedge tips, in points
+    static let focusLinesInnerJitter: CGFloat = 30
+    /// Focus Lines: range of wedge widths at the outer end, in points
+    static let focusLinesWidthRange: ClosedRange<CGFloat> = 6...22
+    /// Focus Lines: number of animation frames and seconds per frame; three frames at about 12 fps
+    static let focusLinesFrameCount = 3
+    static let focusLinesFrameInterval: TimeInterval = 1.0 / 12.0
     /// Maximum seconds between the two presses of a modifier double-tap. Nil disables it; which key is set in the settings window
     static let doubleTapInterval: TimeInterval? = 0.3
 }
 
-// MARK: - SpotlightView
+// MARK: - OverlayView
 
-/// Draws the dim layer and the spot. One per window, filling it as the contentView.
-final class SpotlightView: NSView {
-    /// Spot center in view coordinates. Nil dims the whole view without a hole (the cursor is on another screen)
+/// One per window, filling it as the contentView. Drawing is delegated to the renderer
+final class OverlayView: NSView {
+    /// Cursor position in view coordinates; nil when the cursor is on another screen
     var spot: CGPoint? {
         didSet {
             if spot != oldValue { needsDisplay = true }
         }
+    }
+    /// Seconds since the effect appeared. OverlayController updates it every frame for animated renderers
+    var elapsed: TimeInterval = 0 {
+        didSet { needsDisplay = true }
+    }
+    var renderer: EffectRenderer {
+        didSet { needsDisplay = true }
+    }
+
+    init(frame: NSRect, renderer: EffectRenderer) {
+        self.renderer = renderer
+        super.init(frame: frame)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
     }
 
     override var isOpaque: Bool { false }
 
     override func draw(_ dirtyRect: NSRect) {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
-
-        // 1. Fill everything with translucent black
-        ctx.setFillColor(NSColor.black.withAlphaComponent(Config.dimOpacity).cgColor)
-        ctx.fill(bounds)
-
-        guard let center = spot else { return }
-        let hole = Geometry.holeRect(center: center, radius: Config.spotRadius)
-
-        // 2. Punch the hole with the .clear blend mode (erase the dim so the desktop shows through)
-        ctx.setBlendMode(.clear)
-        ctx.fillEllipse(in: hole)
-
-        // 3. Back to .normal for the ring. Inset by half the line width so the stroke is centered on the hole's edge
-        ctx.setBlendMode(.normal)
-        ctx.setStrokeColor(Config.ringColor.cgColor)
-        ctx.setLineWidth(Config.ringWidth)
-        ctx.strokeEllipse(in: hole.insetBy(dx: Config.ringWidth / 2, dy: Config.ringWidth / 2))
+        renderer.draw(in: ctx, bounds: bounds, spot: spot, elapsed: elapsed)
     }
 }
 
@@ -75,10 +87,10 @@ final class SpotlightView: NSView {
 
 /// A borderless window covering one screen that passes clicks through and never takes focus
 final class OverlayWindow: NSWindow {
-    let spotlightView: SpotlightView
+    let overlayView: OverlayView
 
-    init(screen: NSScreen) {
-        spotlightView = SpotlightView(frame: NSRect(origin: .zero, size: screen.frame.size))
+    init(screen: NSScreen, renderer: EffectRenderer) {
+        overlayView = OverlayView(frame: NSRect(origin: .zero, size: screen.frame.size), renderer: renderer)
         super.init(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
         isOpaque = false
         backgroundColor = .clear
@@ -87,7 +99,7 @@ final class OverlayWindow: NSWindow {
         isReleasedWhenClosed = false
         level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.screenSaverWindow)))
         collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
-        contentView = spotlightView
+        contentView = overlayView
     }
 
     override var canBecomeKey: Bool { false }
@@ -107,6 +119,9 @@ final class OverlayController {
     private var trackingTimer: Timer?
     private var autoHideTimer: Timer?
     private var lastMouseLocation: CGPoint?
+    private var currentEffect = Settings.effect
+    private lazy var renderer: EffectRenderer = makeRenderer(for: currentEffect)
+    private var shownAt: TimeInterval = 0
     private(set) var isVisible = false
 
     init() {
@@ -128,8 +143,20 @@ final class OverlayController {
     }
 
     func show() {
+        // Read the setting on every show and swap the renderer when the effect changed
+        if Settings.effect != currentEffect {
+            currentEffect = Settings.effect
+            renderer = makeRenderer(for: currentEffect)
+            for window in windows {
+                window.overlayView.renderer = renderer
+            }
+        }
+        shownAt = ProcessInfo.processInfo.systemUptime
         syncWindowsWithScreens()
         updateSpot(force: true)
+        for window in windows {
+            window.overlayView.elapsed = 0
+        }
         for window in windows {
             window.orderFrontRegardless()
         }
@@ -163,7 +190,7 @@ final class OverlayController {
             window.orderOut(nil)
             window.close()
         }
-        windows = screens.map { OverlayWindow(screen: $0) }
+        windows = screens.map { OverlayWindow(screen: $0, renderer: renderer) }
         NSLog("Blip: rebuilt overlay windows for %d screens", windows.count)
     }
 
@@ -182,7 +209,14 @@ final class OverlayController {
     private func startTracking() {
         trackingTimer?.invalidate()
         let timer = Timer(timeInterval: Config.trackingInterval, repeats: true) { [weak self] _ in
-            self?.updateSpot(force: false)
+            guard let self = self else { return }
+            self.updateSpot(force: false)
+            if self.renderer.isAnimated {
+                let elapsed = ProcessInfo.processInfo.systemUptime - self.shownAt
+                for window in self.windows {
+                    window.overlayView.elapsed = elapsed
+                }
+            }
         }
         // Without .common the timer pauses while a menu is open
         RunLoop.main.add(timer, forMode: .common)
@@ -195,7 +229,7 @@ final class OverlayController {
         if !force, let last = lastMouseLocation, last == location { return }
         lastMouseLocation = location
         for window in windows {
-            window.spotlightView.spot = Geometry.spotCenter(mouse: location, in: window.frame)
+            window.overlayView.spot = Geometry.spotCenter(mouse: location, in: window.frame)
         }
     }
 
