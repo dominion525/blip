@@ -119,11 +119,10 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
             return
         }
         guard type == .flagsChanged else { return }
-        guard let isDown = Self.isPressedAlone(
-            flags: event.flags,
-            keyCode: event.getIntegerValueField(.keyboardEventKeycode),
-            modifier: modifier
-        ) else { return }
+        let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+        guard let isDown = Self.isPressedAlone(flags: event.flags, keyCode: keyCode, modifier: modifier) else { return }
+        // Log the raw flags so the presence of the left/right device bits can be verified
+        NSLog("Blip: modifier %@ keyCode %lld flags 0x%llx -> %@", modifier.rawValue, keyCode, event.flags.rawValue, isDown ? "down" : "up")
         if tracker.update(isDown: isDown, at: ProcessInfo.processInfo.systemUptime) {
             NSLog("Blip: modifier double-tap (%@)", modifier.rawValue)
             onDoubleTap()
@@ -132,13 +131,42 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
 }
 
 extension ModifierTapMonitor {
+    /// All device-specific bits that identify left and right keys (NX_DEVICE*KEYMASK in IOKit's IOLLEvent.h)
+    static let allDeviceMasks: UInt64 = ModifierKey.allCases.compactMap { $0.deviceMask }.reduce(0, |)
+
     /// Interprets a flagsChanged event as a press or release of the watched key on its own.
     /// Nil when the key code is not the watched key. Otherwise true when the key is down with no other modifier held, false otherwise.
-    /// A press with another modifier held yields false, so combinations like ⌃C never count as a press
+    /// A press with another modifier held yields false, so combinations like ⌃C never count as a press.
+    /// Left and right are told apart by the device-specific bits. Without them, releasing the watched key (say left Shift) while its
+    /// sibling (right Shift) is held leaves the Shift flag set and the release goes unnoticed. Events without device bits fall back to the family flag
     static func isPressedAlone(flags: CGEventFlags, keyCode: Int64, modifier: ModifierKey) -> Bool? {
-        guard let targetKeyCode = modifier.keyCode, keyCode == targetKeyCode else { return nil }
-        let allModifiers: CGEventFlags = [.maskControl, .maskShift, .maskAlternate, .maskCommand]
-        return flags.intersection(allModifiers) == modifier.flagMask
+        guard let targetKeyCode = modifier.keyCode, let deviceMask = modifier.deviceMask, keyCode == targetKeyCode else { return nil }
+        let families: CGEventFlags = [.maskControl, .maskShift, .maskAlternate, .maskCommand]
+        let familiesHeld = flags.intersection(families)
+        let deviceBits = flags.rawValue & allDeviceMasks
+        if deviceBits != 0 || familiesHeld.isEmpty {
+            let selfDown = deviceBits & deviceMask != 0
+            let othersDown = deviceBits & ~deviceMask != 0
+            return selfDown && !othersDown
+        }
+        return familiesHeld == modifier.flagMask
+    }
+}
+
+extension ModifierKey {
+    /// The device-specific bit for this key alone. Nil for off
+    var deviceMask: UInt64? {
+        switch self {
+        case .off: return nil
+        case .leftControl: return 0x0000_0001
+        case .rightControl: return 0x0000_2000
+        case .leftShift: return 0x0000_0002
+        case .rightShift: return 0x0000_0004
+        case .leftCommand: return 0x0000_0008
+        case .rightCommand: return 0x0000_0010
+        case .leftOption: return 0x0000_0020
+        case .rightOption: return 0x0000_0040
+        }
     }
 }
 

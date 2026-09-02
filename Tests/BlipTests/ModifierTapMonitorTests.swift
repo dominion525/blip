@@ -55,6 +55,57 @@ final class ModifierTapMonitorTests: XCTestCase {
         XCTAssertNil(ModifierTapMonitor.isPressedAlone(flags: [.maskControl], keyCode: leftControl, modifier: .off))
     }
 
+    // MARK: Device-specific bits (left and right)
+
+    private func flags(_ raw: UInt64) -> CGEventFlags { CGEventFlags(rawValue: raw) }
+    private let shift: UInt64 = 0x20000
+    private let leftShiftBit: UInt64 = 0x2
+    private let rightShiftBit: UInt64 = 0x4
+
+    func testDeviceBitsIdentifyTheMonitoredSide() {
+        XCTAssertEqual(ModifierTapMonitor.isPressedAlone(flags: flags(shift | leftShiftBit), keyCode: leftShift, modifier: .leftShift), true)
+        XCTAssertEqual(ModifierTapMonitor.isPressedAlone(flags: flags(0), keyCode: leftShift, modifier: .leftShift), false)
+    }
+
+    /// Releasing left Shift while right Shift is held keeps the Shift flag set, but the device bit reveals the release
+    func testReleaseWhileSiblingHeldIsDetected() {
+        XCTAssertEqual(
+            ModifierTapMonitor.isPressedAlone(flags: flags(shift | rightShiftBit), keyCode: leftShift, modifier: .leftShift),
+            false
+        )
+    }
+
+    /// Pressing left Shift while right Shift is held is not a press on its own
+    func testPressWhileSiblingHeldIsNotAlone() {
+        XCTAssertEqual(
+            ModifierTapMonitor.isPressedAlone(flags: flags(shift | leftShiftBit | rightShiftBit), keyCode: leftShift, modifier: .leftShift),
+            false
+        )
+    }
+
+    func testPressWithOtherFamilyHeldIsNotAloneWithDeviceBits() {
+        let control: UInt64 = 0x40000
+        let leftControlBit: UInt64 = 0x1
+        XCTAssertEqual(
+            ModifierTapMonitor.isPressedAlone(flags: flags(shift | leftShiftBit | control | leftControlBit), keyCode: leftShift, modifier: .leftShift),
+            false
+        )
+    }
+
+    /// Without device bits the family flag decides, as before
+    func testFallsBackToFamilyFlagsWithoutDeviceBits() {
+        XCTAssertEqual(ModifierTapMonitor.isPressedAlone(flags: [.maskShift], keyCode: leftShift, modifier: .leftShift), true)
+        XCTAssertEqual(ModifierTapMonitor.isPressedAlone(flags: [.maskShift, .maskControl], keyCode: leftShift, modifier: .leftShift), false)
+    }
+
+    func testDeviceMasksAreUniqueAndCoverAllKeys() {
+        let masks = ModifierKey.allCases.compactMap { $0.deviceMask }
+        XCTAssertEqual(masks.count, ModifierKey.allCases.count - 1)
+        XCTAssertEqual(Set(masks).count, masks.count)
+        XCTAssertEqual(ModifierKey.leftControl.deviceMask, 0x1)
+        XCTAssertEqual(ModifierKey.rightControl.deviceMask, 0x2000)
+    }
+
     func testEverySideMapsToItsFamilyMask() {
         XCTAssertEqual(ModifierKey.leftControl.flagMask, .maskControl)
         XCTAssertEqual(ModifierKey.rightControl.flagMask, .maskControl)
