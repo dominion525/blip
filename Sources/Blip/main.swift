@@ -382,18 +382,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.show()
     }
 
-    /// Icon for the About panel. The bundle has no icon file yet, so the menu bar symbol is passed explicitly
-    private var aboutIcon: NSImage? {
-        let configuration = NSImage.SymbolConfiguration(pointSize: 128, weight: .regular)
-            .applying(.init(hierarchicalColor: .controlAccentColor))
-        return NSImage(systemSymbolName: "cursorarrow.rays", accessibilityDescription: "Blip")?
-            .withSymbolConfiguration(configuration)
+    /// Icon for the About panel. Picks the bundled black (Blip.icns) or white (Blip-dark.icns) drawing from the appearance at draw time
+    static func makeAboutIcon(bundle: Bundle = .main) -> NSImage? {
+        guard
+            let lightURL = bundle.url(forResource: "Blip", withExtension: "icns"),
+            let darkURL = bundle.url(forResource: "Blip-dark", withExtension: "icns"),
+            let light = NSImage(contentsOf: lightURL),
+            let dark = NSImage(contentsOf: darkURL)
+        else { return nil }
+        return NSImage(size: light.size, flipped: false) { rect in
+            let isDark = NSAppearance.currentDrawing().bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            (isDark ? dark : light).draw(in: rect)
+            return true
+        }
     }
 
     @objc private func showAbout() {
         NSApp.activate(ignoringOtherApps: true)
         var options: [NSApplication.AboutPanelOptionKey: Any] = [:]
-        if let icon = aboutIcon {
+        if let icon = Self.makeAboutIcon() {
             options[.applicationIcon] = icon
         }
         NSApp.orderFrontStandardAboutPanel(options: options)

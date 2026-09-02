@@ -16,7 +16,7 @@ A menu bar utility for macOS that highlights the cursor when you lose it on a mu
 open Blip.app
 ```
 
-build.sh builds the executable with `swift build -c release`, assembles Blip.app with Info.plist and the resource bundles, and signs it.
+build.sh builds the executable with `swift build -c release`, assembles Blip.app with Info.plist, the resource bundles, and the app icon, and signs it. The icon is a PNG drawn with Core Graphics by Scripts/make-icon.swift and converted to icns by Scripts/make-icns.sh on every build. No image files live in the repository. A white-stroke variant is bundled too and used by the About panel in dark mode.
 
 A Developer ID Application certificate from the Keychain is used for signing when present; otherwise the app is signed ad hoc. The CODESIGN_IDENTITY environment variable overrides the identity.
 
@@ -116,6 +116,8 @@ Sources/Blip/Settings.swift      UserDefaults access
 Sources/Blip/Resources/          Localizable.strings（en / ja）
 Tests/BlipCoreTests/             XCTest
 build.sh                         Assembles and signs Blip.app
+Scripts/make-icon.swift          App icon artwork (--dark for the white variant)
+Scripts/make-icns.sh             Converts a PNG into an icns
 ```
 
 ## Limitations

@@ -33,6 +33,16 @@ for lang in en ja; do
   mkdir -p "${CONTENTS}/Resources/${lang}.lproj"
 done
 
+# App icon: Scripts/make-icon.swift draws the artwork, which becomes an icns in Resources.
+# The black drawing is the bundle icon; the white one (-dark) is for the About panel in dark mode
+echo "==> icon"
+ICON_WORK="${DIR}/.build/icon"
+mkdir -p "${ICON_WORK}"
+swift "${DIR}/Scripts/make-icon.swift" "${ICON_WORK}/Blip.png"
+swift "${DIR}/Scripts/make-icon.swift" "${ICON_WORK}/Blip-dark.png" --dark
+"${DIR}/Scripts/make-icns.sh" "${ICON_WORK}/Blip.png" "${CONTENTS}/Resources/${APP_NAME}.icns"
+"${DIR}/Scripts/make-icns.sh" "${ICON_WORK}/Blip-dark.png" "${CONTENTS}/Resources/${APP_NAME}-dark.icns"
+
 echo "==> Info.plist"
 cat > "${CONTENTS}/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -47,6 +57,8 @@ cat > "${CONTENTS}/Info.plist" <<PLIST
     <string>ja</string>
   </array>
   <key>CFBundleExecutable</key>
+  <string>${APP_NAME}</string>
+  <key>CFBundleIconFile</key>
   <string>${APP_NAME}</string>
   <key>CFBundleIdentifier</key>
   <string>${BUNDLE_ID}</string>
