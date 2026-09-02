@@ -63,7 +63,18 @@ cat > "${CONTENTS}/Info.plist" <<PLIST
 </plist>
 PLIST
 
-echo "==> codesign (ad-hoc)"
-codesign --force --sign - "${APP_DIR}"
+# Signing: CODESIGN_IDENTITY if set, else a Developer ID Application certificate from the Keychain if present, else ad hoc.
+# An ad hoc signature changes on every rebuild, which can reset permissions such as Input Monitoring; a certificate keeps the app identity stable.
+IDENTITY="${CODESIGN_IDENTITY:-}"
+if [ -z "${IDENTITY}" ] && security find-identity -v -p codesigning | grep -q "Developer ID Application"; then
+  IDENTITY="Developer ID Application"
+fi
+if [ -n "${IDENTITY}" ]; then
+  echo "==> codesign (${IDENTITY})"
+  codesign --force --options runtime --timestamp --sign "${IDENTITY}" "${APP_DIR}"
+else
+  echo "==> codesign (ad-hoc)"
+  codesign --force --sign - "${APP_DIR}"
+fi
 
 echo "==> done: ${APP_DIR}"

@@ -8,7 +8,7 @@
 //   OverlayController Per-display windows, cursor tracking, auto-hide
 //   DoubleTapTracker  Modifier double-tap detection (BlipCore/DoubleTap.swift, pure state machine)
 //   KeyboardShortcuts.Name  Hotkey definition (registration and the recorder UI come from the library)
-//   ModifierTapDetector Polls modifier state to detect a double-tap
+//   ModifierTapMonitor Modifier double-tap via an event tap (ModifierTapMonitor.swift)
 //   SettingsWindowController Settings window (SettingsWindowController.swift)
 //   Settings          UserDefaults-backed settings (Settings.swift)
 //   AppDelegate       Status item and wiring of the parts
@@ -32,10 +32,8 @@ enum Config {
     static let autoHideSeconds: TimeInterval? = 1.2
     /// Cursor tracking interval, in seconds
     static let trackingInterval: TimeInterval = 1.0 / 60.0
-    /// Also show on a Control double-tap. Maximum seconds between the two presses; nil disables it
-    static let controlDoubleTapInterval: TimeInterval? = 0.3
-    /// Modifier polling interval, in seconds
-    static let modifierPollInterval: TimeInterval = 1.0 / 60.0
+    /// Maximum seconds between the two presses of a modifier double-tap. Nil disables it; which key is set in the settings window
+    static let doubleTapInterval: TimeInterval? = 0.3
 }
 
 // MARK: - SpotlightView
@@ -215,56 +213,6 @@ final class OverlayController {
     }
 }
 
-// MARK: - ModifierTapDetector
-
-/// Detects a double-tap of a modifier key on its own.
-/// Only polls NSEvent.modifierFlags (the modifiers currently held), so unlike key event monitoring it needs no permission.
-final class ModifierTapDetector {
-    private let flag: NSEvent.ModifierFlags
-    private let pollInterval: TimeInterval
-    private let onDoubleTap: () -> Void
-    private var tracker: DoubleTapTracker
-    private var timer: Timer?
-    private var wasDown = false
-
-    init(flag: NSEvent.ModifierFlags, interval: TimeInterval, pollInterval: TimeInterval, onDoubleTap: @escaping () -> Void) {
-        self.flag = flag
-        self.pollInterval = pollInterval
-        self.onDoubleTap = onDoubleTap
-        self.tracker = DoubleTapTracker(interval: interval)
-    }
-
-    func start() {
-        timer?.invalidate()
-        let timer = Timer(timeInterval: pollInterval, repeats: true) { [weak self] _ in
-            self?.poll()
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        self.timer = timer
-        NSLog("Blip: modifier double-tap enabled (flag 0x%lx)", flag.rawValue)
-    }
-
-    func stop() {
-        timer?.invalidate()
-        timer = nil
-    }
-
-    private func poll() {
-        let flags = NSEvent.modifierFlags
-        // Only the watched modifier held alone counts as a press; combinations like ⌃C do not
-        let isDown = flags.intersection(.deviceIndependentFlagsMask) == flag
-        if isDown && !wasDown {
-            // Log the raw value to see whether bits that tell left from right are present
-            NSLog("Blip: modifier down (raw 0x%lx)", flags.rawValue)
-        }
-        wasDown = isDown
-        if tracker.update(isDown: isDown, at: ProcessInfo.processInfo.systemUptime) {
-            NSLog("Blip: modifier double-tap")
-            onDoubleTap()
-        }
-    }
-}
-
 // MARK: - Hotkey
 
 extension KeyboardShortcuts.Name {
@@ -277,7 +225,9 @@ extension KeyboardShortcuts.Name {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private let overlay = OverlayController()
-    private var modifierTap: ModifierTapDetector?
+    private lazy var modifierTap = ModifierTapMonitor(interval: Config.doubleTapInterval ?? 0.3) { [weak self] in
+        self?.overlay.toggle()
+    }
     private lazy var settings = SettingsWindowController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -289,29 +239,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSLog("Blip: hotkey %@", KeyboardShortcuts.getShortcut(for: .showSpotlight).map { String(describing: $0) } ?? "(none)")
 
-        settings.onControlDoubleTapChanged = { [weak self] enabled in
-            self?.setControlDoubleTap(enabled: enabled)
+        settings.onDoubleTapModifierChanged = { [weak self] modifier in
+            self?.setDoubleTap(modifier: modifier)
         }
-        setControlDoubleTap(enabled: Settings.controlDoubleTapEnabled)
+        setDoubleTap(modifier: Settings.doubleTapModifier)
     }
 
-    /// Starts or stops the Control double-tap monitor. Called at launch and from the settings window
-    private func setControlDoubleTap(enabled: Bool) {
-        modifierTap?.stop()
-        modifierTap = nil
-        guard enabled, let interval = Config.controlDoubleTapInterval else {
-            NSLog("Blip: modifier double-tap disabled")
+    /// Switches the modifier watched for double-taps. Called at launch and from the settings window
+    private func setDoubleTap(modifier: ModifierKey) {
+        guard Config.doubleTapInterval != nil else {
+            modifierTap.setModifier(.off)
             return
         }
-        let detector = ModifierTapDetector(
-            flag: .control,
-            interval: interval,
-            pollInterval: Config.modifierPollInterval
-        ) { [weak self] in
-            self?.overlay.toggle()
-        }
-        detector.start()
-        modifierTap = detector
+        modifierTap.setModifier(modifier)
     }
 
     private func setUpStatusItem() {

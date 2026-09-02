@@ -8,14 +8,14 @@ enum Settings {
     private static let defaults = UserDefaults.standard
 
     private enum Key {
-        static let controlDoubleTapEnabled = "controlDoubleTapEnabled"
+        static let doubleTapModifier = "doubleTapModifier"
         static let effect = "effect"
     }
 
-    /// Whether a Control double-tap shows the spotlight. On by default
-    static var controlDoubleTapEnabled: Bool {
-        get { defaults.object(forKey: Key.controlDoubleTapEnabled) as? Bool ?? true }
-        set { defaults.set(newValue, forKey: Key.controlDoubleTapEnabled) }
+    /// Modifier key whose double-tap shows the effect. Off disables the double-tap
+    static var doubleTapModifier: ModifierKey {
+        get { ModifierKey(rawValue: defaults.string(forKey: Key.doubleTapModifier) ?? "") ?? ModifierKey.default }
+        set { defaults.set(newValue.rawValue, forKey: Key.doubleTapModifier) }
     }
 
     /// Selected effect. Falls back to the default when unset or unknown
