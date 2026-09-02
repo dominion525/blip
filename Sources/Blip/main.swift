@@ -1,21 +1,21 @@
 // Blip: a menu bar utility that highlights the mouse cursor
 //
 // Layout (least dependent first)
-//   Config            Tunable defaults; edit only this to adjust
+//   Config            Drawing and timing defaults. The hotkey and effect choice live in the settings window (UserDefaults)
 //   Geometry          Coordinate conversion and display matching (BlipCore/Geometry.swift, pure functions)
 //   SpotlightView     Draws the dim layer and the spot
 //   OverlayWindow     Borderless, click-through window shown on every Space
 //   OverlayController Per-display windows, cursor tracking, auto-hide
 //   DoubleTapTracker  Modifier double-tap detection (BlipCore/DoubleTap.swift, pure state machine)
-//   HotKeyManager     Global hotkey via Carbon RegisterEventHotKey
+//   KeyboardShortcuts.Name  Hotkey definition (registration and the recorder UI come from the library)
 //   ModifierTapDetector Polls modifier state to detect a double-tap
-//   SettingsWindowController Settings window
+//   SettingsWindowController Settings window (SettingsWindowController.swift)
+//   Settings          UserDefaults-backed settings (Settings.swift)
 //   AppDelegate       Status item and wiring of the parts
 
 import AppKit
 import BlipCore
-import Carbon.HIToolbox
-import ServiceManagement
+import KeyboardShortcuts
 
 // MARK: - Config
 
@@ -30,10 +30,6 @@ enum Config {
     static let ringWidth: CGFloat = 4
     /// Seconds until the effect hides itself. Nil switches to toggle mode, where pressing the hotkey again hides it
     static let autoHideSeconds: TimeInterval? = 1.2
-    /// Hotkey key code (default Z)
-    static let hotKeyCode: UInt32 = UInt32(kVK_ANSI_Z)
-    /// Hotkey modifiers (default ⌥⌘). controlKey and shiftKey can be OR-ed in
-    static let hotKeyModifiers: UInt32 = UInt32(optionKey | cmdKey)
     /// Cursor tracking interval, in seconds
     static let trackingInterval: TimeInterval = 1.0 / 60.0
     /// Also show on a Control double-tap. Maximum seconds between the two presses; nil disables it
@@ -219,100 +215,6 @@ final class OverlayController {
     }
 }
 
-// MARK: - HotKeyManager
-
-/// Registers a global hotkey with Carbon's RegisterEventHotKey. No accessibility permission is needed.
-final class HotKeyManager {
-    /// EventHotKeyID.signature, used to confirm the hotkey belongs to this process
-    private static let signature: OSType = {
-        var value: OSType = 0
-        for byte in "blip".utf8 {
-            value = (value << 8) | OSType(byte)
-        }
-        return value
-    }()
-
-    private let keyCode: UInt32
-    private let modifiers: UInt32
-    private let hotKeyID: UInt32
-    private let onPress: () -> Void
-    private var hotKeyRef: EventHotKeyRef?
-    private var handlerRef: EventHandlerRef?
-
-    init(keyCode: UInt32, modifiers: UInt32, id: UInt32 = 1, onPress: @escaping () -> Void) {
-        self.keyCode = keyCode
-        self.modifiers = modifiers
-        self.hotKeyID = id
-        self.onPress = onPress
-    }
-
-    /// True when registration succeeds.
-    /// The InstallEventHandler callback is a C function pointer and cannot capture context,
-    /// so a pointer to self is passed as userData and turned back into self inside the handler.
-    func register() -> Bool {
-        var eventType = EventTypeSpec(
-            eventClass: OSType(kEventClassKeyboard),
-            eventKind: UInt32(kEventHotKeyPressed)
-        )
-        let userData = Unmanaged.passUnretained(self).toOpaque()
-
-        let handler: EventHandlerUPP = { _, event, userData in
-            guard let userData = userData else { return OSStatus(eventNotHandledErr) }
-            var pressedID = EventHotKeyID()
-            let status = GetEventParameter(
-                event,
-                EventParamName(kEventParamDirectObject),
-                EventParamType(typeEventHotKeyID),
-                nil,
-                MemoryLayout<EventHotKeyID>.size,
-                nil,
-                &pressedID
-            )
-            guard status == noErr else { return status }
-            let manager = Unmanaged<HotKeyManager>.fromOpaque(userData).takeUnretainedValue()
-            return manager.handle(pressedID)
-        }
-
-        var status = InstallEventHandler(GetApplicationEventTarget(), handler, 1, &eventType, userData, &handlerRef)
-        guard status == noErr else {
-            NSLog("Blip: InstallEventHandler failed (%d)", status)
-            return false
-        }
-
-        let id = EventHotKeyID(signature: Self.signature, id: hotKeyID)
-        status = RegisterEventHotKey(keyCode, modifiers, id, GetApplicationEventTarget(), 0, &hotKeyRef)
-        guard status == noErr else {
-            NSLog("Blip: RegisterEventHotKey failed (%d)", status)
-            return false
-        }
-        NSLog("Blip: hotkey registered (keyCode %u, modifiers 0x%x)", keyCode, modifiers)
-        return true
-    }
-
-    func unregister() {
-        if let hotKeyRef = hotKeyRef {
-            UnregisterEventHotKey(hotKeyRef)
-            self.hotKeyRef = nil
-        }
-        if let handlerRef = handlerRef {
-            RemoveEventHandler(handlerRef)
-            self.handlerRef = nil
-        }
-    }
-
-    private func handle(_ id: EventHotKeyID) -> OSStatus {
-        guard id.signature == Self.signature, id.id == hotKeyID else {
-            return OSStatus(eventNotHandledErr)
-        }
-        onPress()
-        return noErr
-    }
-
-    deinit {
-        unregister()
-    }
-}
-
 // MARK: - ModifierTapDetector
 
 /// Detects a double-tap of a modifier key on its own.
@@ -363,69 +265,11 @@ final class ModifierTapDetector {
     }
 }
 
-// MARK: - SettingsWindowController
+// MARK: - Hotkey
 
-/// The settings window. Survives closing; the same window comes to the front next time
-final class SettingsWindowController: NSWindowController {
-    private let launchAtLoginCheckbox = NSButton(checkboxWithTitle: "Launch at login", target: nil, action: nil)
-
-    init() {
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 120),
-            styleMask: [.titled, .closable, .miniaturizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "Blip Settings"
-        window.isReleasedWhenClosed = false
-        window.center()
-        super.init(window: window)
-
-        launchAtLoginCheckbox.target = self
-        launchAtLoginCheckbox.action = #selector(toggleLaunchAtLogin(_:))
-
-        let stack = NSStackView(views: [launchAtLoginCheckbox])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
-        let content = NSView()
-        content.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: content.topAnchor),
-            stack.leadingAnchor.constraint(equalTo: content.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: content.trailingAnchor),
-            stack.bottomAnchor.constraint(equalTo: content.bottomAnchor),
-        ])
-        window.contentView = content
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) is not supported")
-    }
-
-    func show() {
-        launchAtLoginCheckbox.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        NSApp.activate(ignoringOtherApps: true)
-        window?.makeKeyAndOrderFront(nil)
-    }
-
-    @objc private func toggleLaunchAtLogin(_ sender: NSButton) {
-        do {
-            if sender.state == .on {
-                try SMAppService.mainApp.register()
-                NSLog("Blip: launch at login enabled")
-            } else {
-                try SMAppService.mainApp.unregister()
-                NSLog("Blip: launch at login disabled")
-            }
-        } catch {
-            NSLog("Blip: launch at login change failed: %@", String(describing: error))
-            sender.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        }
-    }
+extension KeyboardShortcuts.Name {
+    /// The hotkey that shows the effect. Defaults to ⌥⌘Z; changes made in the settings window persist in UserDefaults
+    static let showSpotlight = Self("showSpotlight", initial: .init(.z, modifiers: [.option, .command]))
 }
 
 // MARK: - AppDelegate
@@ -433,7 +277,6 @@ final class SettingsWindowController: NSWindowController {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private let overlay = OverlayController()
-    private var hotKey: HotKeyManager?
     private var modifierTap: ModifierTapDetector?
     private lazy var settings = SettingsWindowController()
 
@@ -441,25 +284,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setUpMainMenu()
         setUpStatusItem()
 
-        let hotKey = HotKeyManager(keyCode: Config.hotKeyCode, modifiers: Config.hotKeyModifiers) { [weak self] in
+        KeyboardShortcuts.onKeyDown(for: .showSpotlight) { [weak self] in
             self?.overlay.toggle()
         }
-        if !hotKey.register() {
-            NSLog("Blip: hotkey is unavailable; use the menu bar item instead")
-        }
-        self.hotKey = hotKey
+        NSLog("Blip: hotkey %@", KeyboardShortcuts.getShortcut(for: .showSpotlight).map { String(describing: $0) } ?? "(none)")
 
-        if let interval = Config.controlDoubleTapInterval {
-            let detector = ModifierTapDetector(
-                flag: .control,
-                interval: interval,
-                pollInterval: Config.modifierPollInterval
-            ) { [weak self] in
-                self?.overlay.toggle()
-            }
-            detector.start()
-            modifierTap = detector
+        settings.onControlDoubleTapChanged = { [weak self] enabled in
+            self?.setControlDoubleTap(enabled: enabled)
         }
+        setControlDoubleTap(enabled: Settings.controlDoubleTapEnabled)
+    }
+
+    /// Starts or stops the Control double-tap monitor. Called at launch and from the settings window
+    private func setControlDoubleTap(enabled: Bool) {
+        modifierTap?.stop()
+        modifierTap = nil
+        guard enabled, let interval = Config.controlDoubleTapInterval else {
+            NSLog("Blip: modifier double-tap disabled")
+            return
+        }
+        let detector = ModifierTapDetector(
+            flag: .control,
+            interval: interval,
+            pollInterval: Config.modifierPollInterval
+        ) { [weak self] in
+            self?.overlay.toggle()
+        }
+        detector.start()
+        modifierTap = detector
     }
 
     private func setUpStatusItem() {

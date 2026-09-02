@@ -22,6 +22,13 @@ rm -rf "${APP_DIR}"
 mkdir -p "${MACOS_DIR}"
 cp "${BIN_PATH}/${APP_NAME}" "${MACOS_DIR}/${APP_NAME}"
 
+# Copy the SwiftPM resource bundles (library strings and so on) into Resources; without them Bundle.module crashes
+mkdir -p "${CONTENTS}/Resources"
+for bundle in "${BIN_PATH}"/*.bundle; do
+  [ -d "${bundle}" ] || continue
+  cp -R "${bundle}" "${CONTENTS}/Resources/"
+done
+
 echo "==> Info.plist"
 cat > "${CONTENTS}/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
