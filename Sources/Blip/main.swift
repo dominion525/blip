@@ -36,6 +36,14 @@ enum Config {
     static let zoomDuration: TimeInterval = 0.35
     /// Zoom: overshoot as a fraction of the spot radius; the hole shrinks this much past the target before settling
     static let zoomOvershoot: CGFloat = 0.15
+    /// Flash: blink period in seconds; the ring shows for the first half and hides for the second
+    static let flashBlinkPeriod: TimeInterval = 0.2
+    /// Flash: ring line width multiplier while blinking
+    static let flashRingWidthScale: CGFloat = 1.5
+    /// Flash: ripple emission interval and lifetime in seconds, and the maximum radius as a multiple of the spot radius
+    static let flashRippleInterval: TimeInterval = 0.3
+    static let flashRippleLifetime: TimeInterval = 0.6
+    static let flashRippleMaxScale: CGFloat = 3
     /// Focus Lines: number of wedges
     static let focusLinesCount = 150
     /// Focus Lines: clear radius around the cursor, in points; wedges start here

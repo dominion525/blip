@@ -14,8 +14,10 @@ protocol EffectRenderer: AnyObject {
 /// Creates the renderer for the selected effect. Effects not implemented yet use Spotlight for now
 func makeRenderer(for effect: Effect) -> EffectRenderer {
     switch effect {
-    case .spotlight, .flash:
+    case .spotlight:
         return SpotlightRenderer()
+    case .flash:
+        return FlashRenderer()
     case .zoom:
         return ZoomRenderer()
     case .focusLines:
@@ -25,8 +27,15 @@ func makeRenderer(for effect: Effect) -> EffectRenderer {
 
 // MARK: - Shared drawing
 
-/// Dims the whole view, punches a hole of `radius` at `center`, and strokes the ring. Shared by Spotlight and Zoom
-private func drawDimWithHole(in ctx: CGContext, bounds: CGRect, center: CGPoint?, radius: CGFloat) {
+/// Dims the whole view, punches a hole of `radius` at `center`, and strokes the ring. Shared by Spotlight, Zoom, and Flash
+private func drawDimWithHole(
+    in ctx: CGContext,
+    bounds: CGRect,
+    center: CGPoint?,
+    radius: CGFloat,
+    ringWidth: CGFloat = Config.ringWidth,
+    showsRing: Bool = true
+) {
     ctx.setFillColor(NSColor.black.withAlphaComponent(Config.dimOpacity).cgColor)
     ctx.fill(bounds)
 
@@ -39,9 +48,10 @@ private func drawDimWithHole(in ctx: CGContext, bounds: CGRect, center: CGPoint?
 
     // Back to .normal for the ring. Inset by half the line width so the stroke is centered on the hole's edge
     ctx.setBlendMode(.normal)
+    guard showsRing else { return }
     ctx.setStrokeColor(Config.ringColor.cgColor)
-    ctx.setLineWidth(Config.ringWidth)
-    ctx.strokeEllipse(in: hole.insetBy(dx: Config.ringWidth / 2, dy: Config.ringWidth / 2))
+    ctx.setLineWidth(ringWidth)
+    ctx.strokeEllipse(in: hole.insetBy(dx: ringWidth / 2, dy: ringWidth / 2))
 }
 
 // MARK: - Spotlight
@@ -76,6 +86,42 @@ final class ZoomRenderer: EffectRenderer {
             overshoot: Config.zoomOvershoot
         )
         drawDimWithHole(in: ctx, bounds: bounds, center: center, radius: radius)
+    }
+}
+
+// MARK: - Flash
+
+/// Keeps the Spotlight hole, blinks the ring, and sends ripples out from the hole's edge
+final class FlashRenderer: EffectRenderer {
+    let isAnimated = true
+
+    func draw(in ctx: CGContext, bounds: CGRect, spot: CGPoint?, elapsed: TimeInterval) {
+        let ringVisible = Flash.isRingVisible(elapsed: elapsed, period: Config.flashBlinkPeriod)
+        drawDimWithHole(
+            in: ctx,
+            bounds: bounds,
+            center: spot,
+            radius: Config.spotRadius,
+            ringWidth: Config.ringWidth * Config.flashRingWidthScale,
+            showsRing: ringVisible
+        )
+        guard let center = spot else { return }
+
+        // Ripples expand from the hole's edge up to the maximum scale, fading and thinning as they grow
+        let progresses = Flash.rippleProgresses(
+            elapsed: elapsed,
+            interval: Config.flashRippleInterval,
+            lifetime: Config.flashRippleLifetime
+        )
+        for progress in progresses {
+            let p = CGFloat(progress)
+            let radius = Config.spotRadius * (1 + (Config.flashRippleMaxScale - 1) * p)
+            let alpha = 1 - p
+            let width = Config.ringWidth * (1 - p * 0.5)
+            ctx.setStrokeColor(Config.ringColor.withAlphaComponent(alpha).cgColor)
+            ctx.setLineWidth(width)
+            ctx.strokeEllipse(in: Geometry.holeRect(center: center, radius: radius).insetBy(dx: width / 2, dy: width / 2))
+        }
     }
 }
 
