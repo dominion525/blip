@@ -113,17 +113,27 @@ final class ModifierTapMonitor {
             }
             return
         }
-        guard type == .flagsChanged, let keyCode = modifier.keyCode else { return }
-        guard event.getIntegerValueField(.keyboardEventKeycode) == keyCode else { return }
-
-        // The flags tell whether the watched key went down or up. With another modifier held it is not a press on its own
-        let allModifiers: CGEventFlags = [.maskControl, .maskShift, .maskAlternate, .maskCommand]
-        let held = event.flags.intersection(allModifiers)
-        let isDown = held == modifier.flagMask
+        guard type == .flagsChanged else { return }
+        guard let isDown = Self.isPressedAlone(
+            flags: event.flags,
+            keyCode: event.getIntegerValueField(.keyboardEventKeycode),
+            modifier: modifier
+        ) else { return }
         if tracker.update(isDown: isDown, at: ProcessInfo.processInfo.systemUptime) {
             NSLog("Blip: modifier double-tap (%@)", modifier.rawValue)
             onDoubleTap()
         }
+    }
+}
+
+extension ModifierTapMonitor {
+    /// Interprets a flagsChanged event as a press or release of the watched key on its own.
+    /// Nil when the key code is not the watched key. Otherwise true when the key is down with no other modifier held, false otherwise.
+    /// A press with another modifier held yields false, so combinations like ⌃C never count as a press
+    static func isPressedAlone(flags: CGEventFlags, keyCode: Int64, modifier: ModifierKey) -> Bool? {
+        guard let targetKeyCode = modifier.keyCode, keyCode == targetKeyCode else { return nil }
+        let allModifiers: CGEventFlags = [.maskControl, .maskShift, .maskAlternate, .maskCommand]
+        return flags.intersection(allModifiers) == modifier.flagMask
     }
 }
 

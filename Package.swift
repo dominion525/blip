@@ -23,5 +23,7 @@ let package = Package(
             resources: [.process("Resources")]
         ),
         .testTarget(name: "BlipCoreTests", dependencies: ["BlipCore"]),
+        // The executable target is tested too via @testable import (drawing, settings, key decisions, strings)
+        .testTarget(name: "BlipTests", dependencies: ["Blip"]),
     ]
 )
