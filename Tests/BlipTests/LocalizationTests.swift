@@ -4,8 +4,9 @@ import BlipCore
 
 final class LocalizationTests: XCTestCase {
     private func strings(for localization: String) throws -> [String: String] {
+        // Tests run hosted by the app, so Bundle.main is the app bundle
         let url = try XCTUnwrap(
-            Bundle.module.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: localization),
+            Bundle.main.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: localization),
             "\(localization).lproj/Localizable.strings not found"
         )
         return try XCTUnwrap(NSDictionary(contentsOf: url) as? [String: String])

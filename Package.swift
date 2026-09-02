@@ -2,28 +2,16 @@
 
 import PackageDescription
 
+// Only the AppKit-free logic lives in this package. The app itself (Sources/Blip) and BlipTests are
+// Xcode targets defined in project.yml (XcodeGen), and they depend on this package.
 let package = Package(
-    name: "Blip",
-    defaultLocalization: "en",
+    name: "BlipCore",
     platforms: [.macOS(.v13)],
-    dependencies: [
-        // Hotkey recorder UI and registration. Uses Carbon RegisterEventHotKey underneath, so no accessibility permission is needed
-        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "3.0.0"),
+    products: [
+        .library(name: "BlipCore", targets: ["BlipCore"]),
     ],
     targets: [
-        // AppKit-free logic, covered by tests
         .target(name: "BlipCore"),
-        // The menu bar app itself
-        .executableTarget(
-            name: "Blip",
-            dependencies: [
-                "BlipCore",
-                .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
-            ],
-            resources: [.process("Resources")]
-        ),
         .testTarget(name: "BlipCoreTests", dependencies: ["BlipCore"]),
-        // The executable target is tested too via @testable import (drawing, settings, key decisions, strings)
-        .testTarget(name: "BlipTests", dependencies: ["Blip"]),
     ]
 )

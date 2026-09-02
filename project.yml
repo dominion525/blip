@@ -1,0 +1,70 @@
+# XcodeGen spec. `xcodegen generate` produces Blip.xcodeproj (build.sh does this automatically).
+# The app and BlipTests are defined here; the AppKit-free BlipCore comes from the local package in Package.swift.
+name: Blip
+options:
+  deploymentTarget:
+    macOS: "13.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  xcodeVersion: "26.0"
+
+packages:
+  BlipCore:
+    path: .
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    # Blip.xcodeproj is generated and not committed, so the resolved version is pinned here instead
+    exactVersion: 3.0.1
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    # Apple Silicon only; Intel Macs are not supported
+    ARCHS: arm64
+    # build.sh signs at the end; the Xcode build itself stays ad hoc
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: YES
+
+targets:
+  Blip:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/Blip
+    dependencies:
+      - package: BlipCore
+      - package: KeyboardShortcuts
+    info:
+      path: Sources/Blip/Info.plist
+      properties:
+        CFBundleName: Blip
+        CFBundleDisplayName: Blip
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleIconFile: Blip
+        CFBundleLocalizations: [en, ja]
+        LSUIElement: true
+        NSHighResolutionCapable: true
+        NSHumanReadableCopyright: Blip
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.blip
+        PRODUCT_NAME: Blip
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+
+  BlipTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/BlipTests
+    dependencies:
+      - target: Blip
+      - package: BlipCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: local.blip.tests
