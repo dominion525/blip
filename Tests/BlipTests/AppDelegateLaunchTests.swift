@@ -9,8 +9,10 @@ import KeyboardShortcuts
 final class AppDelegateLaunchTests: XCTestCase {
     private final class FakeModifierTap: ModifierTapMonitoring {
         var received: [ModifierKey] = []
+        var status: ModifierTapMonitor.Status = .off
         func setModifier(_ modifier: ModifierKey) {
             received.append(modifier)
+            status = modifier == .off ? .off : .active
         }
     }
 
@@ -107,6 +109,18 @@ final class AppDelegateLaunchTests: XCTestCase {
         delegate.triggerSpotlight()
         XCTAssertTrue(delegate.overlay.isVisible)
         XCTAssertEqual(delegate.overlay.windows.count, NSScreen.screens.count)
+    }
+
+    /// The settings window shows the monitor's status
+    func testSettingsWindowShowsMonitorStatus() {
+        launch()
+        fakeTap.status = .active
+        delegate.settings.updatePermissionStatus()
+        XCTAssertEqual(delegate.settings.permissionLabel.stringValue, L("settings.permission.granted"))
+        fakeTap.status = .waitingForPermission
+        delegate.settings.updatePermissionStatus()
+        XCTAssertEqual(delegate.settings.permissionLabel.stringValue, L("settings.permission.notGranted"))
+        XCTAssertFalse(delegate.settings.permissionButton.isHidden)
     }
 
     func testEffectChosenInSettingsAppliesOnNextShow() {

@@ -306,6 +306,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.onDoubleTapModifierChanged = { [weak self] modifier in
             self?.setDoubleTap(modifier: modifier)
         }
+        settings.monitorStatus = { [weak self] in
+            self?.modifierTap.status ?? .off
+        }
         setDoubleTap(modifier: store.doubleTapModifier)
     }
 

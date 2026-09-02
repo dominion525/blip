@@ -8,6 +8,8 @@ import ServiceManagement
 final class SettingsWindowController: NSWindowController {
     /// Called when the double-tap modifier changes
     var onDoubleTapModifierChanged: ((ModifierKey) -> Void)?
+    /// Status of the double-tap monitor, supplied by AppDelegate. When off, only the permission state is shown
+    var monitorStatus: () -> ModifierTapMonitor.Status = { .off }
 
     let doubleTapPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
     let permissionLabel = NSTextField(labelWithString: "")
@@ -119,7 +121,13 @@ final class SettingsWindowController: NSWindowController {
     }
 
     func updatePermissionStatus() {
-        let granted = ModifierTapMonitor.hasPermission
+        // "Granted" only while the permission exists and the tap is alive. Revoking it puts the monitor back to waiting, which shows here too
+        let granted: Bool
+        switch monitorStatus() {
+        case .active: granted = true
+        case .waitingForPermission: granted = false
+        case .off: granted = ModifierTapMonitor.hasPermission
+        }
         permissionLabel.stringValue = granted
             ? L("settings.permission.granted")
             : L("settings.permission.notGranted")

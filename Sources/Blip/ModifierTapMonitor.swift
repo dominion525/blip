@@ -1,23 +1,110 @@
 // Detects modifier double-taps with a listen-only CGEvent tap.
-// Left and right keys are told apart by the key code of flagsChanged events (NSEvent.modifierFlags cannot).
-// Requires Input Monitoring. When not granted, the OS dialog is requested and permission is checked every second until it is, then the tap is created.
+// Left and right keys are told apart by the key code and device-specific bits of flagsChanged events (NSEvent.modifierFlags cannot).
+// Requires Input Monitoring. When not granted, the OS dialog is requested and the monitor keeps checking until it is, then creates the tap.
+// Permission is re-checked after that too: revoking it tears the tap down and returns to waiting; granting it again rebuilds the tap.
+// A failed tap creation is treated as waiting as well and retried on the next check.
 
 import AppKit
 import BlipCore
 
 /// The interface AppDelegate uses to drive the double-tap monitor (tests substitute a fake)
 protocol ModifierTapMonitoring: AnyObject {
+    var status: ModifierTapMonitor.Status { get }
     func setModifier(_ modifier: ModifierKey)
 }
 
+/// The minimal event tap operations. CGEventTapHandle is the real one; tests inject a fake
+protocol EventTap: AnyObject {
+    var isEnabled: Bool { get }
+    func enable()
+    func invalidate()
+}
+
+/// A listen-only tap from CGEvent.tapCreate that receives flagsChanged only
+final class CGEventTapHandle: EventTap {
+    private let port: CFMachPort
+    private let source: CFRunLoopSource
+
+    /// Nil when creation fails (no permission, or an OS-side reason)
+    static func make(handler: @escaping (CGEventType, CGEvent) -> Void) -> EventTap? {
+        CGEventTapHandle(handler: handler)
+    }
+
+    private init?(handler: @escaping (CGEventType, CGEvent) -> Void) {
+        let mask = CGEventMask(1 << CGEventType.flagsChanged.rawValue)
+        // The callback is a C function, so the handler travels in a box passed as refcon
+        let box = HandlerBox(handler: handler)
+        let refcon = Unmanaged.passRetained(box).toOpaque()
+        guard let port = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .listenOnly,
+            eventsOfInterest: mask,
+            callback: { _, type, event, refcon in
+                if let refcon = refcon {
+                    Unmanaged<HandlerBox>.fromOpaque(refcon).takeUnretainedValue().handler(type, event)
+                }
+                return Unmanaged.passUnretained(event)
+            },
+            userInfo: refcon
+        ) else {
+            Unmanaged<HandlerBox>.fromOpaque(refcon).release()
+            return nil
+        }
+        self.port = port
+        self.source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0)
+        self.box = box
+        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
+        CGEvent.tapEnable(tap: port, enable: true)
+    }
+
+    private let box: HandlerBox
+    private final class HandlerBox {
+        let handler: (CGEventType, CGEvent) -> Void
+        init(handler: @escaping (CGEventType, CGEvent) -> Void) { self.handler = handler }
+    }
+
+    var isEnabled: Bool { CGEvent.tapIsEnabled(tap: port) }
+
+    func enable() {
+        CGEvent.tapEnable(tap: port, enable: true)
+    }
+
+    func invalidate() {
+        CGEvent.tapEnable(tap: port, enable: false)
+        CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
+        CFMachPortInvalidate(port)
+        Unmanaged.passUnretained(box).release()
+    }
+}
+
 final class ModifierTapMonitor: ModifierTapMonitoring {
+    enum Status: Equatable {
+        /// The watched modifier is off
+        case off
+        /// No permission, or the tap could not be created. Checked periodically to recover
+        case waitingForPermission
+        /// The tap is alive
+        case active
+    }
+
+    typealias TapFactory = (@escaping (CGEventType, CGEvent) -> Void) -> EventTap?
+
+    /// Check interval while waiting for permission, and the interval for spotting revocation while active, in seconds
+    static let waitingCheckInterval: TimeInterval = 1.0
+    static let activeCheckInterval: TimeInterval = 5.0
+
     private let interval: TimeInterval
     private let onDoubleTap: () -> Void
+    private let permissionCheck: () -> Bool
+    private let requestPermission: () -> Void
+    private let makeTap: TapFactory
     private var modifier: ModifierKey = .off
     private var tracker: DoubleTapTracker
-    private var tap: CFMachPort?
-    private var runLoopSource: CFRunLoopSource?
-    private var permissionTimer: Timer?
+    private var tap: EventTap?
+    private var checkTimer: Timer?
+    private var hasRequestedPermission = false
+    private(set) var status: Status = .off
 
     /// Whether Input Monitoring is granted
     static var hasPermission: Bool {
@@ -30,8 +117,18 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
         NSWorkspace.shared.open(url)
     }
 
-    init(interval: TimeInterval, onDoubleTap: @escaping () -> Void) {
+    /// permissionCheck, requestPermission, and makeTap are the OS touch points. The defaults are real; tests inject fakes
+    init(
+        interval: TimeInterval,
+        permissionCheck: @escaping () -> Bool = { ModifierTapMonitor.hasPermission },
+        requestPermission: @escaping () -> Void = { CGRequestListenEventAccess() },
+        makeTap: @escaping TapFactory = CGEventTapHandle.make,
+        onDoubleTap: @escaping () -> Void
+    ) {
         self.interval = interval
+        self.permissionCheck = permissionCheck
+        self.requestPermission = requestPermission
+        self.makeTap = makeTap
         self.onDoubleTap = onDoubleTap
         self.tracker = DoubleTapTracker(interval: interval)
     }
@@ -45,77 +142,80 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
             NSLog("Blip: modifier double-tap disabled")
             return
         }
-        startIfNeeded()
+        if status == .off {
+            status = .waitingForPermission
+            hasRequestedPermission = false
+        }
+        reconcile()
     }
 
     func stop() {
-        permissionTimer?.invalidate()
-        permissionTimer = nil
-        if let tap = tap {
-            CGEvent.tapEnable(tap: tap, enable: false)
+        checkTimer?.invalidate()
+        checkTimer = nil
+        tearDownTap()
+        status = .off
+    }
+
+    // MARK: Permission and tap lifecycle
+
+    /// Reconciles permission with the tap: creates or tears it down as needed. Called periodically from the timer
+    func reconcile() {
+        guard modifier != .off else { return }
+        let granted = permissionCheck()
+        if !granted {
+            if tap != nil {
+                NSLog("Blip: input monitoring permission lost; waiting for it")
+                tearDownTap()
+            }
+            status = .waitingForPermission
+            if !hasRequestedPermission {
+                NSLog("Blip: input monitoring permission not granted; requesting")
+                requestPermission()
+                hasRequestedPermission = true
+            }
+        } else if let tap = tap {
+            // Re-enable a tap the OS disabled (for example after a slow callback)
+            if !tap.isEnabled {
+                tap.enable()
+            }
+            status = .active
+        } else if installTap() {
+            status = .active
+            hasRequestedPermission = false
+        } else {
+            NSLog("Blip: event tap could not be created; retrying")
+            status = .waitingForPermission
         }
-        if let source = runLoopSource {
-            CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
-        }
-        runLoopSource = nil
+        scheduleCheck()
+    }
+
+    private func installTap() -> Bool {
+        guard let tap = makeTap({ [weak self] type, event in
+            self?.handle(type: type, event: event)
+        }) else { return false }
+        self.tap = tap
+        NSLog("Blip: modifier double-tap enabled (%@)", modifier.rawValue)
+        return true
+    }
+
+    private func tearDownTap() {
+        tap?.invalidate()
         tap = nil
     }
 
-    // MARK: Permission and tap
-
-    private func startIfNeeded() {
-        guard tap == nil, permissionTimer == nil else { return }
-        if Self.hasPermission {
-            installTap()
-            return
+    private func scheduleCheck() {
+        checkTimer?.invalidate()
+        let seconds = status == .active ? Self.activeCheckInterval : Self.waitingCheckInterval
+        let timer = Timer(timeInterval: seconds, repeats: false) { [weak self] _ in
+            self?.reconcile()
         }
-        NSLog("Blip: input monitoring permission not granted; requesting")
-        CGRequestListenEventAccess()
-        permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-            guard let self = self else {
-                timer.invalidate()
-                return
-            }
-            guard Self.hasPermission else { return }
-            timer.invalidate()
-            self.permissionTimer = nil
-            self.installTap()
-        }
-    }
-
-    private func installTap() {
-        let mask = CGEventMask(1 << CGEventType.flagsChanged.rawValue)
-        let refcon = Unmanaged.passUnretained(self).toOpaque()
-        guard let tap = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .listenOnly,
-            eventsOfInterest: mask,
-            callback: { _, type, event, refcon in
-                if let refcon = refcon {
-                    Unmanaged<ModifierTapMonitor>.fromOpaque(refcon).takeUnretainedValue().handle(type: type, event: event)
-                }
-                return Unmanaged.passUnretained(event)
-            },
-            userInfo: refcon
-        ) else {
-            NSLog("Blip: CGEvent.tapCreate failed")
-            return
-        }
-        let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
-        CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
-        CGEvent.tapEnable(tap: tap, enable: true)
-        self.tap = tap
-        self.runLoopSource = source
-        NSLog("Blip: modifier double-tap enabled (%@)", modifier.rawValue)
+        RunLoop.main.add(timer, forMode: .common)
+        checkTimer = timer
     }
 
     private func handle(type: CGEventType, event: CGEvent) {
-        // Re-enable the tap when the OS disables it (for example after a slow callback)
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
-            if let tap = tap {
-                CGEvent.tapEnable(tap: tap, enable: true)
-            }
+            tap?.enable()
             return
         }
         guard type == .flagsChanged else { return }

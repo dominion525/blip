@@ -3,6 +3,147 @@ import BlipCore
 @testable import Blip
 
 final class ModifierTapMonitorTests: XCTestCase {
+    // MARK: Permission and tap lifecycle (OS touch points replaced with fakes)
+
+    private final class FakeTap: EventTap {
+        var isEnabled = true
+        var invalidated = false
+        let handler: (CGEventType, CGEvent) -> Void
+        init(handler: @escaping (CGEventType, CGEvent) -> Void) { self.handler = handler }
+        func enable() { isEnabled = true }
+        func invalidate() { invalidated = true; isEnabled = false }
+    }
+
+    private final class Harness {
+        var permission = false
+        var requests = 0
+        var factoryCalls = 0
+        var factoryFails = false
+        var taps: [FakeTap] = []
+        var doubleTaps = 0
+        lazy var monitor = ModifierTapMonitor(
+            interval: 0.3,
+            permissionCheck: { [unowned self] in self.permission },
+            requestPermission: { [unowned self] in self.requests += 1 },
+            makeTap: { [unowned self] handler in
+                self.factoryCalls += 1
+                if self.factoryFails { return nil }
+                let tap = FakeTap(handler: handler)
+                self.taps.append(tap)
+                return tap
+            },
+            onDoubleTap: { [unowned self] in self.doubleTaps += 1 }
+        )
+    }
+
+    /// Synthesizes a flagsChanged event
+    private func flagsEvent(keyCode: CGKeyCode, flags: UInt64) -> CGEvent {
+        let event = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true)!
+        event.type = .flagsChanged
+        event.flags = CGEventFlags(rawValue: flags)
+        return event
+    }
+
+    func testWithoutPermissionItWaitsAndRequestsOnce() {
+        let h = Harness()
+        h.monitor.setModifier(.leftControl)
+        XCTAssertEqual(h.monitor.status, .waitingForPermission)
+        XCTAssertEqual(h.requests, 1)
+        XCTAssertEqual(h.factoryCalls, 0)
+        h.monitor.reconcile()
+        h.monitor.reconcile()
+        XCTAssertEqual(h.requests, 1, "only one request while waiting")
+        XCTAssertEqual(h.factoryCalls, 0)
+    }
+
+    func testTapIsCreatedOncePermissionArrives() {
+        let h = Harness()
+        h.monitor.setModifier(.leftControl)
+        h.permission = true
+        h.monitor.reconcile()
+        XCTAssertEqual(h.monitor.status, .active)
+        XCTAssertEqual(h.factoryCalls, 1)
+        XCTAssertEqual(h.taps.count, 1)
+    }
+
+    func testFailedTapCreationIsRetried() {
+        let h = Harness()
+        h.permission = true
+        h.factoryFails = true
+        h.monitor.setModifier(.leftControl)
+        XCTAssertEqual(h.monitor.status, .waitingForPermission)
+        XCTAssertEqual(h.factoryCalls, 1)
+        h.factoryFails = false
+        h.monitor.reconcile()
+        XCTAssertEqual(h.monitor.status, .active)
+        XCTAssertEqual(h.factoryCalls, 2)
+    }
+
+    /// Revoking permission tears the tap down and returns to waiting; granting it again rebuilds the tap
+    func testPermissionLossTearsDownAndRegrantRebuilds() {
+        let h = Harness()
+        h.permission = true
+        h.monitor.setModifier(.leftControl)
+        XCTAssertEqual(h.monitor.status, .active)
+
+        h.permission = false
+        h.monitor.reconcile()
+        XCTAssertEqual(h.monitor.status, .waitingForPermission)
+        XCTAssertTrue(h.taps[0].invalidated)
+        XCTAssertEqual(h.requests, 1, "requests again after revocation")
+
+        h.permission = true
+        h.monitor.reconcile()
+        XCTAssertEqual(h.monitor.status, .active)
+        XCTAssertEqual(h.taps.count, 2, "creates a new tap")
+        XCTAssertFalse(h.taps[1].invalidated)
+    }
+
+    func testDisabledTapIsReenabledOnCheck() {
+        let h = Harness()
+        h.permission = true
+        h.monitor.setModifier(.leftControl)
+        h.taps[0].isEnabled = false
+        h.monitor.reconcile()
+        XCTAssertTrue(h.taps[0].isEnabled)
+        XCTAssertEqual(h.taps.count, 1, "does not rebuild")
+    }
+
+    func testOffStopsAndInvalidatesTap() {
+        let h = Harness()
+        h.permission = true
+        h.monitor.setModifier(.leftControl)
+        h.monitor.setModifier(.off)
+        XCTAssertEqual(h.monitor.status, .off)
+        XCTAssertTrue(h.taps[0].invalidated)
+        h.monitor.reconcile()
+        XCTAssertEqual(h.factoryCalls, 1, "nothing is created while off")
+    }
+
+    /// Two synthesized flagsChanged presses fire
+    func testDoubleTapFiresThroughTheTap() {
+        let h = Harness()
+        h.permission = true
+        h.monitor.setModifier(.leftControl)
+        let handler = h.taps[0].handler
+        let down: UInt64 = 0x40000 | 0x1
+        handler(.flagsChanged, flagsEvent(keyCode: 59, flags: down))
+        handler(.flagsChanged, flagsEvent(keyCode: 59, flags: 0))
+        handler(.flagsChanged, flagsEvent(keyCode: 59, flags: down))
+        XCTAssertEqual(h.doubleTaps, 1)
+        handler(.flagsChanged, flagsEvent(keyCode: 62, flags: down))
+        XCTAssertEqual(h.doubleTaps, 1, "right Control is ignored")
+    }
+
+    func testTapDisabledEventReenablesTheTap() {
+        let h = Harness()
+        h.permission = true
+        h.monitor.setModifier(.leftControl)
+        h.taps[0].isEnabled = false
+        h.taps[0].handler(.tapDisabledByTimeout, flagsEvent(keyCode: 59, flags: 0))
+        XCTAssertTrue(h.taps[0].isEnabled)
+    }
+
     private let leftControl: Int64 = 59
     private let rightControl: Int64 = 62
     private let leftShift: Int64 = 56
