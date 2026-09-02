@@ -12,20 +12,6 @@ public enum ModifierKey: String, CaseIterable {
     case leftCommand
     case rightCommand
 
-    /// Name shown in the settings window
-    public var displayName: String {
-        switch self {
-        case .off: return "Off"
-        case .leftControl: return "Left Control"
-        case .rightControl: return "Right Control"
-        case .leftShift: return "Left Shift"
-        case .rightShift: return "Right Shift"
-        case .leftOption: return "Left Option"
-        case .rightOption: return "Right Option"
-        case .leftCommand: return "Left Command"
-        case .rightCommand: return "Right Command"
-        }
-    }
 
     /// Key code carried by flagsChanged events. Left and right differ. Nil for off
     public var keyCode: Int64? {
