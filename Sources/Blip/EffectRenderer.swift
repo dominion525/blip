@@ -14,11 +14,34 @@ protocol EffectRenderer: AnyObject {
 /// Creates the renderer for the selected effect. Effects not implemented yet use Spotlight for now
 func makeRenderer(for effect: Effect) -> EffectRenderer {
     switch effect {
-    case .spotlight, .zoom, .flash:
+    case .spotlight, .flash:
         return SpotlightRenderer()
+    case .zoom:
+        return ZoomRenderer()
     case .focusLines:
         return FocusLinesRenderer()
     }
+}
+
+// MARK: - Shared drawing
+
+/// Dims the whole view, punches a hole of `radius` at `center`, and strokes the ring. Shared by Spotlight and Zoom
+private func drawDimWithHole(in ctx: CGContext, bounds: CGRect, center: CGPoint?, radius: CGFloat) {
+    ctx.setFillColor(NSColor.black.withAlphaComponent(Config.dimOpacity).cgColor)
+    ctx.fill(bounds)
+
+    guard let center = center else { return }
+    let hole = Geometry.holeRect(center: center, radius: radius)
+
+    // Punch the hole with the .clear blend mode (erase the dim so the desktop shows through)
+    ctx.setBlendMode(.clear)
+    ctx.fillEllipse(in: hole)
+
+    // Back to .normal for the ring. Inset by half the line width so the stroke is centered on the hole's edge
+    ctx.setBlendMode(.normal)
+    ctx.setStrokeColor(Config.ringColor.cgColor)
+    ctx.setLineWidth(Config.ringWidth)
+    ctx.strokeEllipse(in: hole.insetBy(dx: Config.ringWidth / 2, dy: Config.ringWidth / 2))
 }
 
 // MARK: - Spotlight
@@ -28,21 +51,31 @@ final class SpotlightRenderer: EffectRenderer {
     let isAnimated = false
 
     func draw(in ctx: CGContext, bounds: CGRect, spot: CGPoint?, elapsed: TimeInterval) {
-        ctx.setFillColor(NSColor.black.withAlphaComponent(Config.dimOpacity).cgColor)
-        ctx.fill(bounds)
+        drawDimWithHole(in: ctx, bounds: bounds, center: spot, radius: Config.spotRadius)
+    }
+}
 
-        guard let center = spot else { return }
-        let hole = Geometry.holeRect(center: center, radius: Config.spotRadius)
+// MARK: - Zoom
 
-        // Punch the hole with the .clear blend mode (erase the dim so the desktop shows through)
-        ctx.setBlendMode(.clear)
-        ctx.fillEllipse(in: hole)
+/// A hole as large as the screen shrinks onto the cursor. Once settled it looks like Spotlight
+final class ZoomRenderer: EffectRenderer {
+    let isAnimated = true
 
-        // Back to .normal for the ring. Inset by half the line width so the stroke is centered on the hole's edge
-        ctx.setBlendMode(.normal)
-        ctx.setStrokeColor(Config.ringColor.cgColor)
-        ctx.setLineWidth(Config.ringWidth)
-        ctx.strokeEllipse(in: hole.insetBy(dx: Config.ringWidth / 2, dy: Config.ringWidth / 2))
+    func draw(in ctx: CGContext, bounds: CGRect, spot: CGPoint?, elapsed: TimeInterval) {
+        guard let center = spot else {
+            drawDimWithHole(in: ctx, bounds: bounds, center: nil, radius: 0)
+            return
+        }
+        // Start at the farthest screen corner, plus the line width so the ring starts off-screen too
+        let start = FocusLines.outerRadius(center: center, bounds: bounds) + Config.ringWidth
+        let radius = Zoom.radius(
+            elapsed: elapsed,
+            start: start,
+            end: Config.spotRadius,
+            duration: Config.zoomDuration,
+            overshoot: Config.zoomOvershoot
+        )
+        drawDimWithHole(in: ctx, bounds: bounds, center: center, radius: radius)
     }
 }
 

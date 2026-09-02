@@ -32,6 +32,10 @@ enum Config {
     static let autoHideSeconds: TimeInterval? = 1.2
     /// Cursor tracking interval, in seconds
     static let trackingInterval: TimeInterval = 1.0 / 60.0
+    /// Zoom: seconds to shrink from the whole screen to the spot radius
+    static let zoomDuration: TimeInterval = 0.35
+    /// Zoom: overshoot as a fraction of the spot radius; the hole shrinks this much past the target before settling
+    static let zoomOvershoot: CGFloat = 0.15
     /// Focus Lines: number of wedges
     static let focusLinesCount = 150
     /// Focus Lines: clear radius around the cursor, in points; wedges start here
