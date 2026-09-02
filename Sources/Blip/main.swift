@@ -21,7 +21,7 @@ import KeyboardShortcuts
 
 enum Config {
     /// Radius of the spot (the hole), in points
-    static let spotRadius: CGFloat = 110
+    static let spotRadius: CGFloat = 55
     /// Opacity of the dim layer: 0 transparent, 1 solid black
     static let dimOpacity: CGFloat = 0.55
     /// Ring color

@@ -94,7 +94,7 @@ Values that are not in the settings window live in `enum Config` in Sources/Blip
 
 ```
 Name                     Default   Meaning
-spotRadius               110       Spot radius (pt)
+spotRadius               55        Spot radius (pt)
 dimOpacity               0.55      Opacity of the dim layer
 ringColor                yellow    Ring color
 ringWidth                4         Ring line width (pt)
