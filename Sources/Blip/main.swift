@@ -2,16 +2,17 @@
 //
 // Layout (least dependent first)
 //   Config            Tunable defaults; edit only this to adjust
-//   Geometry          Coordinate conversion and display matching (pure functions)
+//   Geometry          Coordinate conversion and display matching (BlipCore/Geometry.swift, pure functions)
 //   SpotlightView     Draws the dim layer and the spot
 //   OverlayWindow     Borderless, click-through window shown on every Space
 //   OverlayController Per-display windows, cursor tracking, auto-hide
-//   DoubleTapTracker  Modifier double-tap detection (DoubleTap.swift, pure state machine)
+//   DoubleTapTracker  Modifier double-tap detection (BlipCore/DoubleTap.swift, pure state machine)
 //   HotKeyManager     Global hotkey via Carbon RegisterEventHotKey
 //   ModifierTapDetector Polls modifier state to detect a double-tap
 //   AppDelegate       Status item and wiring of the parts
 
 import AppKit
+import BlipCore
 import Carbon.HIToolbox
 
 // MARK: - Config

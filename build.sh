@@ -1,27 +1,26 @@
 #!/bin/bash
-# Assembles Blip.app with a direct swiftc invocation and signs it ad hoc
+# Assembles Blip.app from the swift build products and signs it ad hoc
 set -euo pipefail
 
-cd "$(dirname "$0")"
+DIR="$(cd "$(dirname "$0")" && pwd)"
 
 APP_NAME="Blip"
 BUNDLE_ID="local.blip"
 VERSION="0.1.0"
 MIN_MACOS="13.0"
-ARCH="$(uname -m)"
 
-APP_DIR="${APP_NAME}.app"
+APP_DIR="${DIR}/${APP_NAME}.app"
 CONTENTS="${APP_DIR}/Contents"
 MACOS_DIR="${CONTENTS}/MacOS"
 
+echo "==> swift build (release)"
+swift build -c release --package-path "${DIR}"
+BIN_PATH="$(swift build -c release --package-path "${DIR}" --show-bin-path)"
+
+echo "==> bundle"
 rm -rf "${APP_DIR}"
 mkdir -p "${MACOS_DIR}"
-
-echo "==> swiftc (${ARCH}, macOS ${MIN_MACOS}+)"
-swiftc -O \
-  -target "${ARCH}-apple-macos${MIN_MACOS}" \
-  -o "${MACOS_DIR}/${APP_NAME}" \
-  Geometry.swift DoubleTap.swift main.swift
+cp "${BIN_PATH}/${APP_NAME}" "${MACOS_DIR}/${APP_NAME}"
 
 echo "==> Info.plist"
 cat > "${CONTENTS}/Info.plist" <<PLIST
