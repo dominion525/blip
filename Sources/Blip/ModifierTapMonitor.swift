@@ -10,7 +10,11 @@ import BlipCore
 /// The interface AppDelegate uses to drive the double-tap monitor (tests substitute a fake)
 protocol ModifierTapMonitoring: AnyObject {
     var status: ModifierTapMonitor.Status { get }
+    /// Called when the status changes (the settings window updates from it)
+    var onStatusChange: ((ModifierTapMonitor.Status) -> Void)? { get set }
     func setModifier(_ modifier: ModifierKey)
+    /// Re-check permission and tap state now (for example when the settings window opens)
+    func checkNow()
 }
 
 /// The minimal event tap operations. CGEventTapHandle is the real one; tests inject a fake
@@ -90,9 +94,13 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
 
     typealias TapFactory = (@escaping (CGEventType, CGEvent) -> Void) -> EventTap?
 
-    /// Check interval while waiting for permission, and the interval for spotting revocation while active, in seconds
+    /// Periodic check intervals in seconds. Permission changes are also picked up from app activation, so the timer is a fallback.
+    /// For attentiveDuration after entering the waiting state, check every second (the user is likely in the dialog or System Settings);
+    /// after that every 10 seconds. While active, check for revocation every 30 seconds
     static let waitingCheckInterval: TimeInterval = 1.0
-    static let activeCheckInterval: TimeInterval = 5.0
+    static let idleWaitingCheckInterval: TimeInterval = 10.0
+    static let attentiveDuration: TimeInterval = 60.0
+    static let activeCheckInterval: TimeInterval = 30.0
 
     private let interval: TimeInterval
     private let onDoubleTap: () -> Void
@@ -104,7 +112,15 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
     private var tap: EventTap?
     private var checkTimer: Timer?
     private var hasRequestedPermission = false
-    private(set) var status: Status = .off
+    private var waitingSince: TimeInterval?
+    private var activationObserver: NSObjectProtocol?
+    private let now: () -> TimeInterval
+    var onStatusChange: ((Status) -> Void)?
+    private(set) var status: Status = .off {
+        didSet {
+            if status != oldValue { onStatusChange?(status) }
+        }
+    }
 
     /// Whether Input Monitoring is granted
     static var hasPermission: Bool {
@@ -123,14 +139,22 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
         permissionCheck: @escaping () -> Bool = { ModifierTapMonitor.hasPermission },
         requestPermission: @escaping () -> Void = { CGRequestListenEventAccess() },
         makeTap: @escaping TapFactory = CGEventTapHandle.make,
+        now: @escaping () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
         onDoubleTap: @escaping () -> Void
     ) {
         self.interval = interval
         self.permissionCheck = permissionCheck
         self.requestPermission = requestPermission
         self.makeTap = makeTap
+        self.now = now
         self.onDoubleTap = onDoubleTap
         self.tracker = DoubleTapTracker(interval: interval)
+    }
+
+    deinit {
+        if let observer = activationObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+        }
     }
 
     /// Changes the watched modifier. Off stops monitoring
@@ -145,15 +169,38 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
         if status == .off {
             status = .waitingForPermission
             hasRequestedPermission = false
+            waitingSince = now()
         }
+        observeAppActivation()
         reconcile()
     }
 
     func stop() {
         checkTimer?.invalidate()
         checkTimer = nil
+        if let observer = activationObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            activationObserver = nil
+        }
         tearDownTap()
+        waitingSince = nil
         status = .off
+    }
+
+    func checkNow() {
+        reconcile()
+    }
+
+    /// Permission is changed in System Settings, after which the user switches to another app. Re-check on that activation
+    private func observeAppActivation() {
+        guard activationObserver == nil else { return }
+        activationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.reconcile()
+        }
     }
 
     // MARK: Permission and tap lifecycle
@@ -166,6 +213,9 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
             if tap != nil {
                 NSLog("Blip: input monitoring permission lost; waiting for it")
                 tearDownTap()
+            }
+            if status != .waitingForPermission || waitingSince == nil {
+                waitingSince = now()
             }
             status = .waitingForPermission
             if !hasRequestedPermission {
@@ -182,11 +232,26 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
         } else if installTap() {
             status = .active
             hasRequestedPermission = false
+            waitingSince = nil
         } else {
             NSLog("Blip: event tap could not be created; retrying")
+            if waitingSince == nil { waitingSince = now() }
             status = .waitingForPermission
         }
         scheduleCheck()
+    }
+
+    /// Seconds until the next periodic check, from the status and how long we have been waiting
+    var nextCheckInterval: TimeInterval {
+        switch status {
+        case .off:
+            return 0
+        case .active:
+            return Self.activeCheckInterval
+        case .waitingForPermission:
+            let elapsed = now() - (waitingSince ?? now())
+            return elapsed < Self.attentiveDuration ? Self.waitingCheckInterval : Self.idleWaitingCheckInterval
+        }
     }
 
     private func installTap() -> Bool {
@@ -205,8 +270,8 @@ final class ModifierTapMonitor: ModifierTapMonitoring {
 
     private func scheduleCheck() {
         checkTimer?.invalidate()
-        let seconds = status == .active ? Self.activeCheckInterval : Self.waitingCheckInterval
-        let timer = Timer(timeInterval: seconds, repeats: false) { [weak self] _ in
+        guard status != .off else { return }
+        let timer = Timer(timeInterval: nextCheckInterval, repeats: false) { [weak self] _ in
             self?.reconcile()
         }
         RunLoop.main.add(timer, forMode: .common)

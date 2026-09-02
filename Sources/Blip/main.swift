@@ -152,7 +152,7 @@ final class OverlayController {
         )
     }
 
-    /// Entry point for the hotkey, the double-tap, and the menu. Triggering while visible extends the time until it hides
+    /// Entry point for the hotkey, the double-tap, and the menu. Triggering while visible restarts the effect (elapsed time and the hide timer reset)
     func trigger() {
         show()
     }
@@ -308,6 +308,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         settings.monitorStatus = { [weak self] in
             self?.modifierTap.status ?? .off
+        }
+        settings.requestStatusCheck = { [weak self] in
+            self?.modifierTap.checkNow()
+        }
+        modifierTap.onStatusChange = { [weak self] _ in
+            self?.settings.updatePermissionStatus()
         }
         setDoubleTap(modifier: store.doubleTapModifier)
     }

@@ -9,11 +9,16 @@ import KeyboardShortcuts
 final class AppDelegateLaunchTests: XCTestCase {
     private final class FakeModifierTap: ModifierTapMonitoring {
         var received: [ModifierKey] = []
-        var status: ModifierTapMonitor.Status = .off
+        var checks = 0
+        var onStatusChange: ((ModifierTapMonitor.Status) -> Void)?
+        var status: ModifierTapMonitor.Status = .off {
+            didSet { onStatusChange?(status) }
+        }
         func setModifier(_ modifier: ModifierKey) {
             received.append(modifier)
             status = modifier == .off ? .off : .active
         }
+        func checkNow() { checks += 1 }
     }
 
     private let suiteName = "local.blip.tests.launch"
@@ -111,16 +116,25 @@ final class AppDelegateLaunchTests: XCTestCase {
         XCTAssertEqual(delegate.overlay.windows.count, NSScreen.screens.count)
     }
 
-    /// The settings window shows the monitor's status
-    func testSettingsWindowShowsMonitorStatus() {
+    /// The settings window shows the monitor's status and updates when the monitor reports a change
+    func testSettingsWindowFollowsMonitorStatus() {
         launch()
         fakeTap.status = .active
-        delegate.settings.updatePermissionStatus()
         XCTAssertEqual(delegate.settings.permissionLabel.stringValue, L("settings.permission.granted"))
+        XCTAssertTrue(delegate.settings.permissionButton.isHidden)
         fakeTap.status = .waitingForPermission
-        delegate.settings.updatePermissionStatus()
         XCTAssertEqual(delegate.settings.permissionLabel.stringValue, L("settings.permission.notGranted"))
         XCTAssertFalse(delegate.settings.permissionButton.isHidden)
+    }
+
+    /// With double-tap off, the permission row is hidden
+    func testSettingsWindowHidesPermissionRowWhenDoubleTapIsOff() {
+        launch()
+        let index = ModifierKey.allCases.firstIndex(of: .off)!
+        delegate.settings.doubleTapPopUp.selectItem(at: index)
+        delegate.settings.changeDoubleTapModifier(delegate.settings.doubleTapPopUp)
+        XCTAssertEqual(fakeTap.status, .off)
+        XCTAssertTrue(delegate.settings.permissionLabel.superview?.isHidden ?? false)
     }
 
     func testEffectChosenInSettingsAppliesOnNextShow() {

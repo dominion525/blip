@@ -8,13 +8,15 @@ import ServiceManagement
 final class SettingsWindowController: NSWindowController {
     /// Called when the double-tap modifier changes
     var onDoubleTapModifierChanged: ((ModifierKey) -> Void)?
-    /// Status of the double-tap monitor, supplied by AppDelegate. When off, only the permission state is shown
+    /// Status of the double-tap monitor, supplied by AppDelegate
     var monitorStatus: () -> ModifierTapMonitor.Status = { .off }
+    /// Asks the monitor to re-check its state when the window opens
+    var requestStatusCheck: () -> Void = {}
 
     let doubleTapPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
     let permissionLabel = NSTextField(labelWithString: "")
     let permissionButton = NSButton(title: L("settings.permission.openSystemSettings"), target: nil, action: nil)
-    private var permissionTimer: Timer?
+    private let permissionRow = NSStackView()
     let effectPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
     let launchAtLoginCheckbox = NSButton(checkboxWithTitle: L("settings.launchAtLogin"), target: nil, action: nil)
     private let store: SettingsStore
@@ -41,7 +43,7 @@ final class SettingsWindowController: NSWindowController {
         permissionButton.action = #selector(openSystemSettings)
         permissionButton.controlSize = .small
         permissionButton.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-        let permissionRow = NSStackView(views: [permissionLabel, permissionButton])
+        permissionRow.setViews([permissionLabel, permissionButton], in: .leading)
         permissionRow.orientation = .horizontal
         permissionRow.spacing = 8
 
@@ -103,11 +105,8 @@ final class SettingsWindowController: NSWindowController {
 
     func show() {
         loadValues()
-        // Permission changes in System Settings, so re-check every second while shown
-        permissionTimer?.invalidate()
-        permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.updatePermissionStatus()
-        }
+        // Permission changes arrive from the monitor through onStatusChange. Ask for one check when the window opens
+        requestStatusCheck()
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }
@@ -121,13 +120,12 @@ final class SettingsWindowController: NSWindowController {
     }
 
     func updatePermissionStatus() {
+        // With double-tap off, show neither the permission state nor the prompt to grant it
+        let status = monitorStatus()
+        permissionRow.isHidden = status == .off
+        guard status != .off else { return }
         // "Granted" only while the permission exists and the tap is alive. Revoking it puts the monitor back to waiting, which shows here too
-        let granted: Bool
-        switch monitorStatus() {
-        case .active: granted = true
-        case .waitingForPermission: granted = false
-        case .off: granted = ModifierTapMonitor.hasPermission
-        }
+        let granted = status == .active
         permissionLabel.stringValue = granted
             ? L("settings.permission.granted")
             : L("settings.permission.notGranted")
@@ -141,6 +139,7 @@ final class SettingsWindowController: NSWindowController {
         guard ModifierKey.allCases.indices.contains(index) else { return }
         store.doubleTapModifier = ModifierKey.allCases[index]
         onDoubleTapModifierChanged?(store.doubleTapModifier)
+        updatePermissionStatus()
     }
 
     @objc func changeEffect(_ sender: NSPopUpButton) {
@@ -182,9 +181,4 @@ final class SettingsWindowController: NSWindowController {
     }
 }
 
-extension SettingsWindowController: NSWindowDelegate {
-    func windowWillClose(_ notification: Notification) {
-        permissionTimer?.invalidate()
-        permissionTimer = nil
-    }
-}
+extension SettingsWindowController: NSWindowDelegate {}

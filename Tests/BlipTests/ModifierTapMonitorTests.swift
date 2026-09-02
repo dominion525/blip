@@ -21,19 +21,69 @@ final class ModifierTapMonitorTests: XCTestCase {
         var factoryFails = false
         var taps: [FakeTap] = []
         var doubleTaps = 0
-        lazy var monitor = ModifierTapMonitor(
-            interval: 0.3,
-            permissionCheck: { [unowned self] in self.permission },
-            requestPermission: { [unowned self] in self.requests += 1 },
-            makeTap: { [unowned self] handler in
-                self.factoryCalls += 1
-                if self.factoryFails { return nil }
-                let tap = FakeTap(handler: handler)
-                self.taps.append(tap)
-                return tap
-            },
-            onDoubleTap: { [unowned self] in self.doubleTaps += 1 }
-        )
+        var clock: TimeInterval = 1000
+        var statusChanges: [ModifierTapMonitor.Status] = []
+        lazy var monitor: ModifierTapMonitor = {
+            let monitor = ModifierTapMonitor(
+                interval: 0.3,
+                permissionCheck: { [unowned self] in self.permission },
+                requestPermission: { [unowned self] in self.requests += 1 },
+                makeTap: { [unowned self] handler in
+                    self.factoryCalls += 1
+                    if self.factoryFails { return nil }
+                    let tap = FakeTap(handler: handler)
+                    self.taps.append(tap)
+                    return tap
+                },
+                now: { [unowned self] in self.clock },
+                onDoubleTap: { [unowned self] in self.doubleTaps += 1 }
+            )
+            monitor.onStatusChange = { [unowned self] in self.statusChanges.append($0) }
+            return monitor
+        }()
+    }
+
+    func testCheckIntervalBacksOffWhileWaiting() {
+        let h = Harness()
+        h.monitor.setModifier(.leftControl)
+        XCTAssertEqual(h.monitor.nextCheckInterval, ModifierTapMonitor.waitingCheckInterval, "every second right after entering the waiting state")
+        h.clock += ModifierTapMonitor.attentiveDuration + 1
+        XCTAssertEqual(h.monitor.nextCheckInterval, ModifierTapMonitor.idleWaitingCheckInterval, "every 10 seconds after a minute")
+        h.permission = true
+        h.monitor.reconcile()
+        XCTAssertEqual(h.monitor.nextCheckInterval, ModifierTapMonitor.activeCheckInterval, "every 30 seconds while active")
+        h.monitor.setModifier(.off)
+        XCTAssertEqual(h.monitor.nextCheckInterval, 0)
+    }
+
+    /// Losing permission restarts the fast checks
+    func testBackOffRestartsAfterPermissionLoss() {
+        let h = Harness()
+        h.permission = true
+        h.monitor.setModifier(.leftControl)
+        h.clock += 500
+        h.permission = false
+        h.monitor.reconcile()
+        XCTAssertEqual(h.monitor.nextCheckInterval, ModifierTapMonitor.waitingCheckInterval)
+    }
+
+    func testStatusChangesAreReported() {
+        let h = Harness()
+        h.monitor.setModifier(.leftControl)
+        h.permission = true
+        h.monitor.reconcile()
+        h.permission = false
+        h.monitor.reconcile()
+        h.monitor.setModifier(.off)
+        XCTAssertEqual(h.statusChanges, [.waitingForPermission, .active, .waitingForPermission, .off])
+    }
+
+    func testCheckNowReconcilesImmediately() {
+        let h = Harness()
+        h.monitor.setModifier(.leftControl)
+        h.permission = true
+        h.monitor.checkNow()
+        XCTAssertEqual(h.monitor.status, .active)
     }
 
     /// Synthesizes a flagsChanged event

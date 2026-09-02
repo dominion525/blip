@@ -109,14 +109,29 @@ final class SettingsWindowControllerTests: XCTestCase {
 
     // MARK: Permission display
 
-    func testPermissionStatusMatchesSystemState() {
+    func testPermissionRowReflectsMonitorStatus() throws {
+        let row = try XCTUnwrap(controller.permissionLabel.superview)
+        controller.monitorStatus = { .active }
         controller.updatePermissionStatus()
-        if ModifierTapMonitor.hasPermission {
-            XCTAssertEqual(controller.permissionLabel.stringValue, L("settings.permission.granted"))
-            XCTAssertTrue(controller.permissionButton.isHidden, "no button once granted")
-        } else {
-            XCTAssertEqual(controller.permissionLabel.stringValue, L("settings.permission.notGranted"))
-            XCTAssertFalse(controller.permissionButton.isHidden, "offers to open System Settings while not granted")
-        }
+        XCTAssertFalse(row.isHidden)
+        XCTAssertEqual(controller.permissionLabel.stringValue, L("settings.permission.granted"))
+        XCTAssertTrue(controller.permissionButton.isHidden, "no button once granted")
+
+        controller.monitorStatus = { .waitingForPermission }
+        controller.updatePermissionStatus()
+        XCTAssertEqual(controller.permissionLabel.stringValue, L("settings.permission.notGranted"))
+        XCTAssertFalse(controller.permissionButton.isHidden, "offers to open System Settings while not granted")
+
+        controller.monitorStatus = { .off }
+        controller.updatePermissionStatus()
+        XCTAssertTrue(row.isHidden, "no permission row while double-tap is off")
+    }
+
+    func testShowAsksTheMonitorToCheck() {
+        var checks = 0
+        controller.requestStatusCheck = { checks += 1 }
+        controller.show()
+        XCTAssertEqual(checks, 1)
+        controller.close()
     }
 }
