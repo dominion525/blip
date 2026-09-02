@@ -31,8 +31,25 @@ final class GeometryTests: XCTestCase {
         XCTAssertEqual(Geometry.spotCenter(mouse: CGPoint(x: 1920, y: 100), in: rightOfPrimary), CGPoint(x: 0, y: 100))
     }
 
-    func testSpotCenterAtOriginIsInside() {
-        XCTAssertEqual(Geometry.spotCenter(mouse: .zero, in: primary), .zero)
+    /// The top row (y == maxY) is inside: the coordinate of a cursor parked against the menu bar
+    func testSpotCenterAtTopEdgeIsInside() {
+        XCTAssertEqual(Geometry.spotCenter(mouse: CGPoint(x: 500, y: 1080), in: primary), CGPoint(x: 500, y: 1080))
+    }
+
+    /// The bottom edge (y == minY) is outside, so a vertically shared edge belongs to the upper screen only
+    func testSpotCenterOnVerticalSharedEdgeBelongsToTheUpperScreen() {
+        let above = CGRect(x: 0, y: 1080, width: 1920, height: 1080)
+        XCTAssertNil(Geometry.spotCenter(mouse: CGPoint(x: 500, y: 1080), in: above))
+        XCTAssertEqual(Geometry.spotCenter(mouse: CGPoint(x: 500, y: 1080), in: primary), CGPoint(x: 500, y: 1080))
+        XCTAssertEqual(Geometry.spotCenter(mouse: CGPoint(x: 500, y: 2160), in: above), CGPoint(x: 500, y: 1080))
+    }
+
+    func testSpotCenterAtLeftEdgeIsInside() {
+        XCTAssertEqual(Geometry.spotCenter(mouse: CGPoint(x: 0, y: 500), in: primary), CGPoint(x: 0, y: 500))
+    }
+
+    func testSpotCenterAtBottomEdgeIsOutside() {
+        XCTAssertNil(Geometry.spotCenter(mouse: CGPoint(x: 500, y: 0), in: primary))
     }
 
     // MARK: framesMatch

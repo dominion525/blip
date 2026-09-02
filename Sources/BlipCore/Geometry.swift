@@ -7,10 +7,11 @@ public enum Geometry {
     /// Returns the window-local point for the global `mouse` location if it lies inside the window `frame`,
     /// or nil when it does not (that window then dims fully without a hole).
     /// NSEvent.mouseLocation and NSWindow.frame share the same global space (origin at the bottom-left of the primary display, y up), so subtracting the frame origin is the whole conversion.
-    /// Edge rules follow CGRect.contains: minX / minY are inside, maxX / maxY outside.
+    /// Edge rules match NSMouseInRect (non-flipped): minX is inside and maxX outside; maxY is inside and minY outside.
+    /// A cursor parked against the menu bar reports mouse.y == frame.maxY, so the top edge must count as inside.
     /// A cursor on the shared edge of two adjacent displays belongs to exactly one of them.
     public static func spotCenter(mouse: CGPoint, in frame: CGRect) -> CGPoint? {
-        guard frame.contains(mouse) else { return nil }
+        guard mouse.x >= frame.minX, mouse.x < frame.maxX, mouse.y > frame.minY, mouse.y <= frame.maxY else { return nil }
         return CGPoint(x: mouse.x - frame.minX, y: mouse.y - frame.minY)
     }
 
