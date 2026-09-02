@@ -21,7 +21,7 @@ echo "==> swiftc (${ARCH}, macOS ${MIN_MACOS}+)"
 swiftc -O \
   -target "${ARCH}-apple-macos${MIN_MACOS}" \
   -o "${MACOS_DIR}/${APP_NAME}" \
-  main.swift
+  Geometry.swift DoubleTap.swift main.swift
 
 echo "==> Info.plist"
 cat > "${CONTENTS}/Info.plist" <<PLIST
