@@ -50,6 +50,8 @@ cat > "${CONTENTS}/Info.plist" <<PLIST
   <true/>
   <key>NSHighResolutionCapable</key>
   <true/>
+  <key>NSHumanReadableCopyright</key>
+  <string>Blip</string>
 </dict>
 </plist>
 PLIST

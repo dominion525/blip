@@ -9,11 +9,13 @@
 //   DoubleTapTracker  Modifier double-tap detection (BlipCore/DoubleTap.swift, pure state machine)
 //   HotKeyManager     Global hotkey via Carbon RegisterEventHotKey
 //   ModifierTapDetector Polls modifier state to detect a double-tap
+//   SettingsWindowController Settings window
 //   AppDelegate       Status item and wiring of the parts
 
 import AppKit
 import BlipCore
 import Carbon.HIToolbox
+import ServiceManagement
 
 // MARK: - Config
 
@@ -361,6 +363,71 @@ final class ModifierTapDetector {
     }
 }
 
+// MARK: - SettingsWindowController
+
+/// The settings window. Survives closing; the same window comes to the front next time
+final class SettingsWindowController: NSWindowController {
+    private let launchAtLoginCheckbox = NSButton(checkboxWithTitle: "Launch at login", target: nil, action: nil)
+
+    init() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 360, height: 120),
+            styleMask: [.titled, .closable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Blip Settings"
+        window.isReleasedWhenClosed = false
+        window.center()
+        super.init(window: window)
+
+        launchAtLoginCheckbox.target = self
+        launchAtLoginCheckbox.action = #selector(toggleLaunchAtLogin(_:))
+
+        let stack = NSStackView(views: [launchAtLoginCheckbox])
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        let content = NSView()
+        content.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: content.topAnchor),
+            stack.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            stack.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+        ])
+        window.contentView = content
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
+
+    func show() {
+        launchAtLoginCheckbox.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        NSApp.activate(ignoringOtherApps: true)
+        window?.makeKeyAndOrderFront(nil)
+    }
+
+    @objc private func toggleLaunchAtLogin(_ sender: NSButton) {
+        do {
+            if sender.state == .on {
+                try SMAppService.mainApp.register()
+                NSLog("Blip: launch at login enabled")
+            } else {
+                try SMAppService.mainApp.unregister()
+                NSLog("Blip: launch at login disabled")
+            }
+        } catch {
+            NSLog("Blip: launch at login change failed: %@", String(describing: error))
+            sender.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        }
+    }
+}
+
 // MARK: - AppDelegate
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -368,8 +435,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let overlay = OverlayController()
     private var hotKey: HotKeyManager?
     private var modifierTap: ModifierTapDetector?
+    private lazy var settings = SettingsWindowController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        setUpMainMenu()
         setUpStatusItem()
 
         let hotKey = HotKeyManager(keyCode: Config.hotKeyCode, modifiers: Config.hotKeyModifiers) { [weak self] in
@@ -408,14 +477,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         trigger.target = self
         menu.addItem(trigger)
         menu.addItem(.separator())
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+        let aboutItem = NSMenuItem(title: "About Blip", action: #selector(showAbout), keyEquivalent: "")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Blip", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         item.menu = menu
 
         statusItem = item
     }
 
+    /// A minimal main menu so ⌘, and ⌘Q work on the settings window even though the app has no menu bar presence
+    private func setUpMainMenu() {
+        let appMenu = NSMenu()
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        appMenu.addItem(settingsItem)
+        appMenu.addItem(.separator())
+        appMenu.addItem(NSMenuItem(title: "Quit Blip", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+
+        let appMenuItem = NSMenuItem()
+        appMenuItem.submenu = appMenu
+        let mainMenu = NSMenu()
+        mainMenu.addItem(appMenuItem)
+        NSApp.mainMenu = mainMenu
+    }
+
     @objc private func triggerSpotlight() {
         overlay.toggle()
+    }
+
+    @objc private func showSettings() {
+        settings.show()
+    }
+
+    @objc private func showAbout() {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.orderFrontStandardAboutPanel(nil)
     }
 }
 
