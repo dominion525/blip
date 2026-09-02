@@ -127,16 +127,23 @@ final class OverlayWindow: NSWindow {
 
 /// Owns one window per display and handles showing, hiding, cursor tracking, and auto-hide
 final class OverlayController {
-    private var windows: [OverlayWindow] = []
+    private let store: SettingsStore
+    private let autoHideSeconds: TimeInterval?
+    private(set) var windows: [OverlayWindow] = []
     private var trackingTimer: Timer?
     private var autoHideTimer: Timer?
     private var lastMouseLocation: CGPoint?
-    private var currentEffect = Settings.effect
-    private lazy var renderer: EffectRenderer = makeRenderer(for: currentEffect)
+    private(set) var currentEffect: Effect
+    private(set) var renderer: EffectRenderer
     private var shownAt: TimeInterval = 0
     private(set) var isVisible = false
 
-    init() {
+    /// `store` supplies the effect setting; `autoHideSeconds` is the auto-hide delay (nil for toggle mode). Defaults come from the app settings and Config
+    init(store: SettingsStore = Settings.store, autoHideSeconds: TimeInterval? = Config.autoHideSeconds) {
+        self.store = store
+        self.autoHideSeconds = autoHideSeconds
+        currentEffect = store.effect
+        renderer = makeRenderer(for: currentEffect)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(screenParametersDidChange),
@@ -147,7 +154,7 @@ final class OverlayController {
 
     /// Entry point for the hotkey and the menu. In toggle mode (autoHideSeconds nil) it hides while visible; otherwise it shows
     func toggle() {
-        if isVisible && Config.autoHideSeconds == nil {
+        if isVisible && autoHideSeconds == nil {
             hide()
         } else {
             show()
@@ -155,14 +162,7 @@ final class OverlayController {
     }
 
     func show() {
-        // Read the setting on every show and swap the renderer when the effect changed
-        if Settings.effect != currentEffect {
-            currentEffect = Settings.effect
-            renderer = makeRenderer(for: currentEffect)
-            for window in windows {
-                window.overlayView.renderer = renderer
-            }
-        }
+        applyEffectSetting()
         shownAt = ProcessInfo.processInfo.systemUptime
         syncWindowsWithScreens()
         updateSpot(force: true)
@@ -192,8 +192,19 @@ final class OverlayController {
 
     // MARK: Window management
 
+    /// Swaps the renderer when the stored effect differs from the current one. Called on every show
+    func applyEffectSetting() {
+        let effect = store.effect
+        guard effect != currentEffect else { return }
+        currentEffect = effect
+        renderer = makeRenderer(for: effect)
+        for window in windows {
+            window.overlayView.renderer = renderer
+        }
+    }
+
     /// Compares the current NSScreen.screens with the windows' frames and rebuilds the windows when they differ
-    private func syncWindowsWithScreens() {
+    func syncWindowsWithScreens() {
         let screens = NSScreen.screens
         if Geometry.framesMatch(windows: windows.map { $0.frame }, screens: screens.map { $0.frame }) {
             return
@@ -236,7 +247,7 @@ final class OverlayController {
     }
 
     /// Distributes the cursor position to every window; only the screen under the cursor gets a non-nil spot
-    private func updateSpot(force: Bool) {
+    func updateSpot(force: Bool) {
         let location = NSEvent.mouseLocation
         if !force, let last = lastMouseLocation, last == location { return }
         lastMouseLocation = location
@@ -250,7 +261,7 @@ final class OverlayController {
     private func scheduleAutoHide() {
         autoHideTimer?.invalidate()
         autoHideTimer = nil
-        guard let seconds = Config.autoHideSeconds else { return }
+        guard let seconds = autoHideSeconds else { return }
         let timer = Timer(timeInterval: seconds, repeats: false) { [weak self] _ in
             self?.hide()
         }
@@ -288,7 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.onDoubleTapModifierChanged = { [weak self] modifier in
             self?.setDoubleTap(modifier: modifier)
         }
-        setDoubleTap(modifier: Settings.doubleTapModifier)
+        setDoubleTap(modifier: Settings.store.doubleTapModifier)
     }
 
     /// Switches the modifier watched for double-taps. Called at launch and from the settings window
@@ -309,7 +320,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 button.title = "◎"
             }
         }
+        item.menu = makeStatusMenu()
+        statusItem = item
+    }
 
+    /// The menu opened from the status bar icon
+    func makeStatusMenu() -> NSMenu {
         let menu = NSMenu()
         let trigger = NSMenuItem(title: L("menu.showSpotlight"), action: #selector(triggerSpotlight), keyEquivalent: "")
         trigger.target = self
@@ -323,13 +339,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(aboutItem)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: L("menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-        item.menu = menu
-
-        statusItem = item
+        return menu
     }
 
     /// A minimal main menu so ⌘, and ⌘Q work on the settings window even though the app has no menu bar presence
     private func setUpMainMenu() {
+        NSApp.mainMenu = makeMainMenu()
+    }
+
+    func makeMainMenu() -> NSMenu {
         let appMenu = NSMenu()
         let settingsItem = NSMenuItem(title: L("menu.settings"), action: #selector(showSettings), keyEquivalent: ",")
         settingsItem.target = self
@@ -341,7 +359,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appMenuItem.submenu = appMenu
         let mainMenu = NSMenu()
         mainMenu.addItem(appMenuItem)
-        NSApp.mainMenu = mainMenu
+        return mainMenu
     }
 
     @objc private func triggerSpotlight() {

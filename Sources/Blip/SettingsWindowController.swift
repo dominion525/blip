@@ -9,14 +9,16 @@ final class SettingsWindowController: NSWindowController {
     /// Called when the double-tap modifier changes
     var onDoubleTapModifierChanged: ((ModifierKey) -> Void)?
 
-    private let doubleTapPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
-    private let permissionLabel = NSTextField(labelWithString: "")
-    private let permissionButton = NSButton(title: L("settings.permission.openSystemSettings"), target: nil, action: nil)
+    let doubleTapPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
+    let permissionLabel = NSTextField(labelWithString: "")
+    let permissionButton = NSButton(title: L("settings.permission.openSystemSettings"), target: nil, action: nil)
     private var permissionTimer: Timer?
-    private let effectPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
-    private let launchAtLoginCheckbox = NSButton(checkboxWithTitle: L("settings.launchAtLogin"), target: nil, action: nil)
+    let effectPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
+    let launchAtLoginCheckbox = NSButton(checkboxWithTitle: L("settings.launchAtLogin"), target: nil, action: nil)
+    private let store: SettingsStore
 
-    init() {
+    init(store: SettingsStore = Settings.store) {
+        self.store = store
         let window = NSWindow(
             contentRect: .zero,
             styleMask: [.titled, .closable, .miniaturizable],
@@ -98,10 +100,7 @@ final class SettingsWindowController: NSWindowController {
     }
 
     func show() {
-        doubleTapPopUp.selectItem(at: ModifierKey.allCases.firstIndex(of: Settings.doubleTapModifier) ?? 0)
-        effectPopUp.selectItem(at: Effect.allCases.firstIndex(of: Settings.effect) ?? 0)
-        launchAtLoginCheckbox.state = SMAppService.mainApp.status == .enabled ? .on : .off
-        updatePermissionStatus()
+        loadValues()
         // Permission changes in System Settings, so re-check every second while shown
         permissionTimer?.invalidate()
         permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -111,7 +110,15 @@ final class SettingsWindowController: NSWindowController {
         window?.makeKeyAndOrderFront(nil)
     }
 
-    private func updatePermissionStatus() {
+    /// Loads stored values and OS state into the controls. Called every time the window opens
+    func loadValues() {
+        doubleTapPopUp.selectItem(at: ModifierKey.allCases.firstIndex(of: store.doubleTapModifier) ?? 0)
+        effectPopUp.selectItem(at: Effect.allCases.firstIndex(of: store.effect) ?? 0)
+        launchAtLoginCheckbox.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        updatePermissionStatus()
+    }
+
+    func updatePermissionStatus() {
         let granted = ModifierTapMonitor.hasPermission
         permissionLabel.stringValue = granted
             ? L("settings.permission.granted")
@@ -121,18 +128,18 @@ final class SettingsWindowController: NSWindowController {
 
     // MARK: Actions
 
-    @objc private func changeDoubleTapModifier(_ sender: NSPopUpButton) {
+    @objc func changeDoubleTapModifier(_ sender: NSPopUpButton) {
         let index = sender.indexOfSelectedItem
         guard ModifierKey.allCases.indices.contains(index) else { return }
-        Settings.doubleTapModifier = ModifierKey.allCases[index]
-        onDoubleTapModifierChanged?(Settings.doubleTapModifier)
+        store.doubleTapModifier = ModifierKey.allCases[index]
+        onDoubleTapModifierChanged?(store.doubleTapModifier)
     }
 
-    @objc private func changeEffect(_ sender: NSPopUpButton) {
+    @objc func changeEffect(_ sender: NSPopUpButton) {
         let index = sender.indexOfSelectedItem
         guard Effect.allCases.indices.contains(index) else { return }
-        Settings.effect = Effect.allCases[index]
-        NSLog("Blip: effect set to %@", Settings.effect.rawValue)
+        store.effect = Effect.allCases[index]
+        NSLog("Blip: effect set to %@", store.effect.rawValue)
     }
 
     @objc private func openSystemSettings() {

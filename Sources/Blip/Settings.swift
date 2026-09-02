@@ -33,14 +33,4 @@ final class SettingsStore {
 /// Entry point for the app itself, backed by the standard UserDefaults
 enum Settings {
     static let store = SettingsStore(defaults: .standard)
-
-    static var doubleTapModifier: ModifierKey {
-        get { store.doubleTapModifier }
-        set { store.doubleTapModifier = newValue }
-    }
-
-    static var effect: Effect {
-        get { store.effect }
-        set { store.effect = newValue }
-    }
 }
