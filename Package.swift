@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "Blip",
+    defaultLocalization: "en",
     platforms: [.macOS(.v13)],
     dependencies: [
         // Hotkey recorder UI and registration. Uses Carbon RegisterEventHotKey underneath, so no accessibility permission is needed
@@ -18,7 +19,8 @@ let package = Package(
             dependencies: [
                 "BlipCore",
                 .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
-            ]
+            ],
+            resources: [.process("Resources")]
         ),
         .testTarget(name: "BlipCoreTests", dependencies: ["BlipCore"]),
     ]

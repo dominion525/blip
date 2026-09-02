@@ -265,18 +265,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menu = NSMenu()
-        let trigger = NSMenuItem(title: "Show Spotlight", action: #selector(triggerSpotlight), keyEquivalent: "")
+        let trigger = NSMenuItem(title: L("menu.showSpotlight"), action: #selector(triggerSpotlight), keyEquivalent: "")
         trigger.target = self
         menu.addItem(trigger)
         menu.addItem(.separator())
-        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: L("menu.settings"), action: #selector(showSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
-        let aboutItem = NSMenuItem(title: "About Blip", action: #selector(showAbout), keyEquivalent: "")
+        let aboutItem = NSMenuItem(title: L("menu.about"), action: #selector(showAbout), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit Blip", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: L("menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         item.menu = menu
 
         statusItem = item
@@ -285,11 +285,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// A minimal main menu so ⌘, and ⌘Q work on the settings window even though the app has no menu bar presence
     private func setUpMainMenu() {
         let appMenu = NSMenu()
-        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: L("menu.settings"), action: #selector(showSettings), keyEquivalent: ",")
         settingsItem.target = self
         appMenu.addItem(settingsItem)
         appMenu.addItem(.separator())
-        appMenu.addItem(NSMenuItem(title: "Quit Blip", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appMenu.addItem(NSMenuItem(title: L("menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         let appMenuItem = NSMenuItem()
         appMenuItem.submenu = appMenu

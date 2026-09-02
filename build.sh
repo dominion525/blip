@@ -28,6 +28,10 @@ for bundle in "${BIN_PATH}"/*.bundle; do
   [ -d "${bundle}" ] || continue
   cp -R "${bundle}" "${CONTENTS}/Resources/"
 done
+# Tell the OS which languages are supported; the per-app language setting looks at Contents/Resources/*.lproj
+for lang in en ja; do
+  mkdir -p "${CONTENTS}/Resources/${lang}.lproj"
+done
 
 echo "==> Info.plist"
 cat > "${CONTENTS}/Info.plist" <<PLIST
@@ -37,6 +41,11 @@ cat > "${CONTENTS}/Info.plist" <<PLIST
 <dict>
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>ja</string>
+  </array>
   <key>CFBundleExecutable</key>
   <string>${APP_NAME}</string>
   <key>CFBundleIdentifier</key>

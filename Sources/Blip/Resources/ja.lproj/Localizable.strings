@@ -1,0 +1,35 @@
+/* Status bar menu */
+"menu.showSpotlight" = "スポットライトを表示";
+"menu.settings" = "設定…";
+"menu.about" = "Blip について";
+"menu.quit" = "Blip を終了";
+
+/* Settings window */
+"settings.title" = "Blip 設定";
+"settings.section.hotkey" = "ホットキー";
+"settings.hotkey.showSpotlight" = "スポットライトを表示:";
+"settings.hotkey.doubleTapModifier" = "修飾キー 2 回押し:";
+"settings.permission.granted" = "入力監視: 許可済み";
+"settings.permission.notGranted" = "入力監視: 未許可（2 回押しに必要）";
+"settings.permission.openSystemSettings" = "システム設定を開く";
+"settings.section.effect" = "エフェクト";
+"settings.effect" = "エフェクト:";
+"settings.section.general" = "一般";
+"settings.launchAtLogin" = "ログイン時に起動";
+
+/* Effects */
+"effect.spotlight" = "スポットライト";
+"effect.zoom" = "ズーム";
+"effect.flash" = "フラッシュ";
+"effect.focusLines" = "集中線";
+
+/* Modifier keys */
+"modifier.off" = "オフ";
+"modifier.leftControl" = "左 Control";
+"modifier.rightControl" = "右 Control";
+"modifier.leftShift" = "左 Shift";
+"modifier.rightShift" = "右 Shift";
+"modifier.leftOption" = "左 Option";
+"modifier.rightOption" = "右 Option";
+"modifier.leftCommand" = "左 Command";
+"modifier.rightCommand" = "右 Command";

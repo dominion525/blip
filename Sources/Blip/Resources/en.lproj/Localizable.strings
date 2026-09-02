@@ -1,0 +1,35 @@
+/* Status bar menu */
+"menu.showSpotlight" = "Show Spotlight";
+"menu.settings" = "Settings…";
+"menu.about" = "About Blip";
+"menu.quit" = "Quit Blip";
+
+/* Settings window */
+"settings.title" = "Blip Settings";
+"settings.section.hotkey" = "Hotkey";
+"settings.hotkey.showSpotlight" = "Show spotlight:";
+"settings.hotkey.doubleTapModifier" = "Double-tap modifier:";
+"settings.permission.granted" = "Input Monitoring: granted";
+"settings.permission.notGranted" = "Input Monitoring: not granted (required for double-tap)";
+"settings.permission.openSystemSettings" = "Open System Settings";
+"settings.section.effect" = "Effect";
+"settings.effect" = "Effect:";
+"settings.section.general" = "General";
+"settings.launchAtLogin" = "Launch at login";
+
+/* Effects */
+"effect.spotlight" = "Spotlight";
+"effect.zoom" = "Zoom";
+"effect.flash" = "Flash";
+"effect.focusLines" = "Focus Lines";
+
+/* Modifier keys */
+"modifier.off" = "Off";
+"modifier.leftControl" = "Left Control";
+"modifier.rightControl" = "Right Control";
+"modifier.leftShift" = "Left Shift";
+"modifier.rightShift" = "Right Shift";
+"modifier.leftOption" = "Left Option";
+"modifier.rightOption" = "Right Option";
+"modifier.leftCommand" = "Left Command";
+"modifier.rightCommand" = "Right Command";

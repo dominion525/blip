@@ -11,10 +11,10 @@ final class SettingsWindowController: NSWindowController {
 
     private let doubleTapPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
     private let permissionLabel = NSTextField(labelWithString: "")
-    private let permissionButton = NSButton(title: "Open System Settings", target: nil, action: nil)
+    private let permissionButton = NSButton(title: L("settings.permission.openSystemSettings"), target: nil, action: nil)
     private var permissionTimer: Timer?
     private let effectPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
-    private let launchAtLoginCheckbox = NSButton(checkboxWithTitle: "Launch at login", target: nil, action: nil)
+    private let launchAtLoginCheckbox = NSButton(checkboxWithTitle: L("settings.launchAtLogin"), target: nil, action: nil)
 
     init() {
         let window = NSWindow(
@@ -23,11 +23,11 @@ final class SettingsWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "Blip Settings"
+        window.title = L("settings.title")
         window.isReleasedWhenClosed = false
         super.init(window: window)
 
-        doubleTapPopUp.addItems(withTitles: ModifierKey.allCases.map { $0.displayName })
+        doubleTapPopUp.addItems(withTitles: ModifierKey.allCases.map { $0.localizedName })
         doubleTapPopUp.target = self
         doubleTapPopUp.action = #selector(changeDoubleTapModifier(_:))
 
@@ -41,7 +41,7 @@ final class SettingsWindowController: NSWindowController {
         permissionRow.orientation = .horizontal
         permissionRow.spacing = 8
 
-        effectPopUp.addItems(withTitles: Effect.allCases.map { $0.displayName })
+        effectPopUp.addItems(withTitles: Effect.allCases.map { $0.localizedName })
         effectPopUp.target = self
         effectPopUp.action = #selector(changeEffect(_:))
 
@@ -54,13 +54,13 @@ final class SettingsWindowController: NSWindowController {
 
         // Labels in the left column, controls in the right. Section headers are bold labels
         let grid = NSGridView(views: [
-            [sectionLabel("Hotkey"), NSGridCell.emptyContentView],
-            [fieldLabel("Show spotlight:"), recorder],
-            [fieldLabel("Double-tap modifier:"), doubleTapPopUp],
+            [sectionLabel(L("settings.section.hotkey")), NSGridCell.emptyContentView],
+            [fieldLabel(L("settings.hotkey.showSpotlight")), recorder],
+            [fieldLabel(L("settings.hotkey.doubleTapModifier")), doubleTapPopUp],
             [NSGridCell.emptyContentView, permissionRow],
-            [sectionLabel("Effect"), NSGridCell.emptyContentView],
-            [fieldLabel("Effect:"), effectPopUp],
-            [sectionLabel("General"), NSGridCell.emptyContentView],
+            [sectionLabel(L("settings.section.effect")), NSGridCell.emptyContentView],
+            [fieldLabel(L("settings.effect")), effectPopUp],
+            [sectionLabel(L("settings.section.general")), NSGridCell.emptyContentView],
             [NSGridCell.emptyContentView, launchAtLoginCheckbox],
         ])
         grid.rowSpacing = 8
@@ -114,8 +114,8 @@ final class SettingsWindowController: NSWindowController {
     private func updatePermissionStatus() {
         let granted = ModifierTapMonitor.hasPermission
         permissionLabel.stringValue = granted
-            ? "Input Monitoring: granted"
-            : "Input Monitoring: not granted (required for double-tap)"
+            ? L("settings.permission.granted")
+            : L("settings.permission.notGranted")
         permissionButton.isHidden = granted
     }
 
