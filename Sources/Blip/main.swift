@@ -514,9 +514,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settings.show()
     }
 
+    /// Icon for the About panel. The bundle has no icon file yet, so the menu bar symbol is passed explicitly
+    private var aboutIcon: NSImage? {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 128, weight: .regular)
+            .applying(.init(hierarchicalColor: .controlAccentColor))
+        return NSImage(systemSymbolName: "cursorarrow.rays", accessibilityDescription: "Blip")?
+            .withSymbolConfiguration(configuration)
+    }
+
     @objc private func showAbout() {
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.orderFrontStandardAboutPanel(nil)
+        var options: [NSApplication.AboutPanelOptionKey: Any] = [:]
+        if let icon = aboutIcon {
+            options[.applicationIcon] = icon
+        }
+        NSApp.orderFrontStandardAboutPanel(options: options)
     }
 }
 
