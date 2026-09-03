@@ -5,7 +5,7 @@ import ServiceManagement
 
 /// Builds the settings window and inspects its controls without presenting it (show is not called)
 final class SettingsWindowControllerTests: XCTestCase {
-    private let suiteName = "local.blip.tests.settingswindow"
+    private let suiteName = "com.dominion525.blip.tests.settingswindow"
     private var defaults: UserDefaults!
     private var store: SettingsStore!
     private var controller: SettingsWindowController!

@@ -4,7 +4,7 @@ import BlipCore
 
 /// Builds the overlay windows for real and inspects them. syncWindowsWithScreens does not present anything; only the tests calling show do
 final class OverlayControllerTests: XCTestCase {
-    private let suiteName = "local.blip.tests.overlay"
+    private let suiteName = "com.dominion525.blip.tests.overlay"
     private var defaults: UserDefaults!
     private var store: SettingsStore!
 

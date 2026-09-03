@@ -3,7 +3,7 @@ import BlipCore
 @testable import Blip
 
 final class SettingsTests: XCTestCase {
-    private let suiteName = "local.blip.tests.settings"
+    private let suiteName = "com.dominion525.blip.tests.settings"
     private var defaults: UserDefaults!
     private var store: SettingsStore!
 
@@ -56,7 +56,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testStoresAreIndependentPerDefaults() {
-        let otherSuite = "local.blip.tests.settings.other"
+        let otherSuite = "com.dominion525.blip.tests.settings.other"
         let other = UserDefaults(suiteName: otherSuite)!
         other.removePersistentDomain(forName: otherSuite)
         defer { other.removePersistentDomain(forName: otherSuite) }

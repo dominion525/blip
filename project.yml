@@ -51,7 +51,7 @@ targets:
         NSHumanReadableCopyright: Copyright (c) 2026 dominion525 (SATOSHI MATSUMOTO)
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: local.blip
+        PRODUCT_BUNDLE_IDENTIFIER: com.dominion525.blip
         PRODUCT_NAME: Blip
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -67,4 +67,4 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: local.blip.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.dominion525.blip.tests
