@@ -301,7 +301,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardShortcuts.onKeyDown(for: .showSpotlight) { [weak self] in
             self?.overlay.trigger()
         }
-        NSLog("Blip: hotkey %@", KeyboardShortcuts.getShortcut(for: .showSpotlight).map { String(describing: $0) } ?? "(none)")
+        // The library does not report registration failures, so only the configured value can be logged. If pressing it does nothing, suspect this value or a clash with another app
+        if let shortcut = KeyboardShortcuts.getShortcut(for: .showSpotlight) {
+            NSLog("Blip: hotkey configured as %@ (registration result is not reported by KeyboardShortcuts)", String(describing: shortcut))
+        } else {
+            NSLog("Blip: no hotkey configured; set one in Settings or use the double-tap")
+        }
 
         settings.onDoubleTapModifierChanged = { [weak self] modifier in
             self?.setDoubleTap(modifier: modifier)
