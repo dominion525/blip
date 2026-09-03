@@ -8,7 +8,7 @@ echo "==> swift test (BlipCore)"
 swift test --package-path "${DIR}"
 
 echo "==> xcodegen"
-xcodegen generate --spec "${DIR}/project.yml" --project "${DIR}" --use-cache --quiet
+xcodegen generate --spec "${DIR}/project.yml" --project "${DIR}" --quiet
 
 echo "==> xcodebuild test (Blip)"
 xcodebuild -project "${DIR}/Blip.xcodeproj" -scheme Blip -configuration Debug -destination "platform=macOS,arch=arm64" \

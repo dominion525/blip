@@ -1,5 +1,6 @@
 import XCTest
 import BlipCore
+import ServiceManagement
 @testable import Blip
 
 /// Builds the settings window and inspects its controls without presenting it (show is not called)
@@ -8,13 +9,29 @@ final class SettingsWindowControllerTests: XCTestCase {
     private var defaults: UserDefaults!
     private var store: SettingsStore!
     private var controller: SettingsWindowController!
+    private var loginItem: FakeLoginItem!
+
+    private final class FakeLoginItem: LoginItemService {
+        var status: SMAppService.Status = .notRegistered
+        var statusAfterRegister: SMAppService.Status = .enabled
+        var registerError: Error?
+        var opened = 0
+        struct Failure: Error {}
+        func register() throws {
+            if let error = registerError { throw error }
+            status = statusAfterRegister
+        }
+        func unregister() throws { status = .notRegistered }
+        func openSystemSettings() { opened += 1 }
+    }
 
     override func setUp() {
         super.setUp()
         defaults = UserDefaults(suiteName: suiteName)
         defaults.removePersistentDomain(forName: suiteName)
         store = SettingsStore(defaults: defaults)
-        controller = SettingsWindowController(store: store)
+        loginItem = FakeLoginItem()
+        controller = SettingsWindowController(store: store, loginItem: loginItem)
     }
 
     override func tearDown() {
@@ -105,6 +122,70 @@ final class SettingsWindowControllerTests: XCTestCase {
         controller.changeDoubleTapModifier(controller.doubleTapPopUp)
         XCTAssertEqual(store.doubleTapModifier, .off)
         XCTAssertEqual(notified, [.off])
+    }
+
+    // MARK: Login item
+
+    private var loginItemRow: NSView? { controller.loginItemLabel.superview }
+
+    func testLoginItemStatesDriveTheCheckboxAndNote() throws {
+        let row = try XCTUnwrap(loginItemRow)
+
+        loginItem.status = .notRegistered
+        controller.updateLoginItemStatus()
+        XCTAssertEqual(controller.launchAtLoginCheckbox.state, .off)
+        XCTAssertTrue(row.isHidden)
+
+        loginItem.status = .enabled
+        controller.updateLoginItemStatus()
+        XCTAssertEqual(controller.launchAtLoginCheckbox.state, .on)
+        XCTAssertTrue(row.isHidden)
+
+        loginItem.status = .requiresApproval
+        controller.updateLoginItemStatus()
+        XCTAssertEqual(controller.launchAtLoginCheckbox.state, .on, "keeps the user's choice while approval is pending")
+        XCTAssertFalse(row.isHidden)
+        XCTAssertEqual(controller.loginItemLabel.stringValue, L("settings.loginItem.requiresApproval"))
+        XCTAssertFalse(controller.loginItemButton.isHidden, "offers to open Login Items")
+
+        loginItem.status = .notFound
+        controller.updateLoginItemStatus()
+        XCTAssertEqual(controller.launchAtLoginCheckbox.state, .off)
+        XCTAssertFalse(row.isHidden)
+        XCTAssertEqual(controller.loginItemLabel.stringValue, L("settings.loginItem.notFound"))
+        XCTAssertTrue(controller.loginItemButton.isHidden)
+    }
+
+    func testTurningOnRegistersAndShowsApprovalNoteWhenRequired() throws {
+        loginItem.statusAfterRegister = .requiresApproval
+        controller.launchAtLoginCheckbox.state = .on
+        controller.toggleLaunchAtLogin(controller.launchAtLoginCheckbox)
+        XCTAssertEqual(loginItem.status, .requiresApproval)
+        XCTAssertEqual(controller.launchAtLoginCheckbox.state, .on)
+        XCTAssertFalse(try XCTUnwrap(loginItemRow).isHidden)
+    }
+
+    func testTurningOffUnregisters() {
+        loginItem.status = .enabled
+        controller.updateLoginItemStatus()
+        controller.launchAtLoginCheckbox.state = .off
+        controller.toggleLaunchAtLogin(controller.launchAtLoginCheckbox)
+        XCTAssertEqual(loginItem.status, .notRegistered)
+        XCTAssertEqual(controller.launchAtLoginCheckbox.state, .off)
+    }
+
+    func testFailedRegistrationRevertsTheCheckbox() {
+        loginItem.registerError = FakeLoginItem.Failure()
+        controller.launchAtLoginCheckbox.state = .on
+        controller.toggleLaunchAtLogin(controller.launchAtLoginCheckbox)
+        XCTAssertEqual(controller.launchAtLoginCheckbox.state, .off)
+    }
+
+    func testOpenLoginItemsButtonOpensSystemSettings() {
+        loginItem.status = .requiresApproval
+        controller.updateLoginItemStatus()
+        controller.loginItemButton.performClick(nil)
+        XCTAssertEqual(loginItem.opened, 1)
     }
 
     // MARK: Permission display

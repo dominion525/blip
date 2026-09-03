@@ -16,6 +16,9 @@
 "settings.effect" = "エフェクト:";
 "settings.section.general" = "一般";
 "settings.launchAtLogin" = "ログイン時に起動";
+"settings.loginItem.requiresApproval" = "システム設定での承認待ちです";
+"settings.loginItem.notFound" = "登録先のアプリが移動しています。オフにしてから入れ直してください";
+"settings.loginItem.openSystemSettings" = "ログイン項目を開く";
 
 /* Effects */
 "effect.spotlight" = "スポットライト";

@@ -19,10 +19,15 @@ final class SettingsWindowController: NSWindowController {
     private let permissionRow = NSStackView()
     let effectPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
     let launchAtLoginCheckbox = NSButton(checkboxWithTitle: L("settings.launchAtLogin"), target: nil, action: nil)
+    let loginItemLabel = NSTextField(labelWithString: "")
+    let loginItemButton = NSButton(title: L("settings.loginItem.openSystemSettings"), target: nil, action: nil)
+    private let loginItemRow = NSStackView()
     private let store: SettingsStore
+    private let loginItem: LoginItemService
 
-    init(store: SettingsStore = Settings.store) {
+    init(store: SettingsStore = Settings.store, loginItem: LoginItemService = MainAppLoginItem()) {
         self.store = store
+        self.loginItem = loginItem
         let window = NSWindow(
             contentRect: .zero,
             styleMask: [.titled, .closable, .miniaturizable],
@@ -54,6 +59,16 @@ final class SettingsWindowController: NSWindowController {
         launchAtLoginCheckbox.target = self
         launchAtLoginCheckbox.action = #selector(toggleLaunchAtLogin(_:))
 
+        loginItemLabel.textColor = .secondaryLabelColor
+        loginItemLabel.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        loginItemButton.target = self
+        loginItemButton.action = #selector(openLoginItemsSettings)
+        loginItemButton.controlSize = .small
+        loginItemButton.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        loginItemRow.setViews([loginItemLabel, loginItemButton], in: .leading)
+        loginItemRow.orientation = .horizontal
+        loginItemRow.spacing = 8
+
         let recorder = KeyboardShortcuts.RecorderCocoa(for: .showSpotlight) { shortcut in
             NSLog("Blip: hotkey recorded %@", shortcut.map { String(describing: $0) } ?? "(cleared)")
         }
@@ -68,6 +83,7 @@ final class SettingsWindowController: NSWindowController {
             [fieldLabel(L("settings.effect")), effectPopUp],
             [sectionLabel(L("settings.section.general")), NSGridCell.emptyContentView],
             [NSGridCell.emptyContentView, launchAtLoginCheckbox],
+            [NSGridCell.emptyContentView, loginItemRow],
         ])
         grid.rowSpacing = 8
         grid.columnSpacing = 12
@@ -115,8 +131,35 @@ final class SettingsWindowController: NSWindowController {
     func loadValues() {
         doubleTapPopUp.selectItem(at: ModifierKey.allCases.firstIndex(of: store.doubleTapModifier) ?? 0)
         effectPopUp.selectItem(at: Effect.allCases.firstIndex(of: store.effect) ?? 0)
-        launchAtLoginCheckbox.state = SMAppService.mainApp.status == .enabled ? .on : .off
+        updateLoginItemStatus()
         updatePermissionStatus()
+    }
+
+    /// Reflects the login item state in the checkbox and its note.
+    /// Requires approval (inactive until the user approves it in System Settings) keeps the box checked and shows guidance.
+    /// Not found (the app moved) unchecks the box and asks to re-enable
+    func updateLoginItemStatus() {
+        switch loginItem.status {
+        case .enabled:
+            launchAtLoginCheckbox.state = .on
+            loginItemRow.isHidden = true
+        case .requiresApproval:
+            launchAtLoginCheckbox.state = .on
+            loginItemLabel.stringValue = L("settings.loginItem.requiresApproval")
+            loginItemButton.isHidden = false
+            loginItemRow.isHidden = false
+        case .notFound:
+            launchAtLoginCheckbox.state = .off
+            loginItemLabel.stringValue = L("settings.loginItem.notFound")
+            loginItemButton.isHidden = true
+            loginItemRow.isHidden = false
+        case .notRegistered:
+            launchAtLoginCheckbox.state = .off
+            loginItemRow.isHidden = true
+        @unknown default:
+            launchAtLoginCheckbox.state = .off
+            loginItemRow.isHidden = true
+        }
     }
 
     func updatePermissionStatus() {
@@ -153,19 +196,23 @@ final class SettingsWindowController: NSWindowController {
         ModifierTapMonitor.openSystemSettings()
     }
 
-    @objc private func toggleLaunchAtLogin(_ sender: NSButton) {
+    @objc func toggleLaunchAtLogin(_ sender: NSButton) {
         do {
             if sender.state == .on {
-                try SMAppService.mainApp.register()
-                NSLog("Blip: launch at login enabled")
+                try loginItem.register()
+                NSLog("Blip: launch at login registered (%d)", loginItem.status.rawValue)
             } else {
-                try SMAppService.mainApp.unregister()
-                NSLog("Blip: launch at login disabled")
+                try loginItem.unregister()
+                NSLog("Blip: launch at login unregistered")
             }
         } catch {
             NSLog("Blip: launch at login change failed: %@", String(describing: error))
-            sender.state = SMAppService.mainApp.status == .enabled ? .on : .off
         }
+        updateLoginItemStatus()
+    }
+
+    @objc private func openLoginItemsSettings() {
+        loginItem.openSystemSettings()
     }
 
     // MARK: Labels

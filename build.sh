@@ -12,7 +12,7 @@ CONTENTS="${APP_DIR}/Contents"
 DERIVED_DATA="${DIR}/.build/xcode"
 
 echo "==> xcodegen"
-xcodegen generate --spec "${DIR}/project.yml" --project "${DIR}" --use-cache --quiet
+xcodegen generate --spec "${DIR}/project.yml" --project "${DIR}" --quiet
 
 echo "==> xcodebuild (release)"
 xcodebuild -project "${DIR}/${APP_NAME}.xcodeproj" -scheme "${APP_NAME}" -configuration Release -destination "platform=macOS,arch=arm64" \

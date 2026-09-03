@@ -19,7 +19,7 @@ open Blip.app
 
 build.sh runs these steps.
 
-1. Generate Blip.xcodeproj from project.yml with XcodeGen. Nothing happens when project.yml is unchanged. Blip.xcodeproj is a build product and is not committed
+1. Generate Blip.xcodeproj from project.yml with XcodeGen. This happens on every build so new source files are picked up. Blip.xcodeproj is a build product and is not committed
 2. Build the Release configuration with xcodebuild and copy the resulting Blip.app to the repository root. Xcode takes care of Info.plist and the resource bundles
 3. Draw the app icon with Scripts/make-icon.swift, convert it to icns with Scripts/make-icns.sh, and bundle it. No image files live in the repository. A white-stroke variant is bundled too and used by the About panel in dark mode
 4. Sign the app. A Developer ID Application certificate from the Keychain is used when present; otherwise the app is signed ad hoc. The CODESIGN_IDENTITY environment variable overrides the identity

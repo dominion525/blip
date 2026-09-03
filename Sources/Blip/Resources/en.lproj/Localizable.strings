@@ -16,6 +16,9 @@
 "settings.effect" = "Effect:";
 "settings.section.general" = "General";
 "settings.launchAtLogin" = "Launch at login";
+"settings.loginItem.requiresApproval" = "Waiting for approval in System Settings";
+"settings.loginItem.notFound" = "The login item points to a moved app. Turn it off and on again.";
+"settings.loginItem.openSystemSettings" = "Open Login Items";
 
 /* Effects */
 "effect.spotlight" = "Spotlight";
