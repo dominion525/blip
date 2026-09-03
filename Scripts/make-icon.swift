@@ -9,7 +9,7 @@ import UniformTypeIdentifiers
 
 let arguments = CommandLine.arguments
 guard arguments.count >= 2 else {
-    FileHandle.standardError.write("usage: make-icon.swift <output.png> [size]\n".data(using: .utf8)!)
+    FileHandle.standardError.write("usage: make-icon.swift <output.png> [size] [--dark]\n".data(using: .utf8)!)
     exit(2)
 }
 let outputURL = URL(fileURLWithPath: arguments[1])

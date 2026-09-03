@@ -48,7 +48,7 @@ targets:
         CFBundleLocalizations: [en, ja]
         LSUIElement: true
         NSHighResolutionCapable: true
-        NSHumanReadableCopyright: Blip
+        NSHumanReadableCopyright: Copyright (c) 2026 dominion525 (SATOSHI MATSUMOTO)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: local.blip

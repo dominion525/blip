@@ -3,3 +3,4 @@ Blip.app/
 .DS_Store
 .build/
 Blip.xcodeproj/
+.swiftpm/
