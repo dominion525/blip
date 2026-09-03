@@ -149,3 +149,9 @@ Scripts/make-icns.sh             Converts a PNG into an icns
 - The hotkey field does not accept a modifier on its own or Shift plus a key
 - The login item is tied to the location of Blip.app. Re-enable it after moving the app
 - An ad hoc signed Blip.app opened on another Mac is blocked by Gatekeeper
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
+The app depends on [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts), which is MIT licensed as well.
