@@ -12,7 +12,6 @@ public enum ModifierKey: String, CaseIterable {
     case leftCommand
     case rightCommand
 
-
     /// Key code carried by flagsChanged events. Left and right differ. Nil for off
     public var keyCode: Int64? {
         switch self {

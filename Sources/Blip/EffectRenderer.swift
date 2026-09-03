@@ -11,7 +11,7 @@ protocol EffectRenderer: AnyObject {
     func draw(in ctx: CGContext, bounds: CGRect, spot: CGPoint?, elapsed: TimeInterval)
 }
 
-/// Creates the renderer for the selected effect. Effects not implemented yet use Spotlight for now
+/// Creates the renderer for the selected effect
 func makeRenderer(for effect: Effect) -> EffectRenderer {
     switch effect {
     case .spotlight:

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Assembles and signs Blip.app.
-# Steps: generate Blip.xcodeproj with XcodeGen (only when project.yml changed) -> Release build with xcodebuild
+# Steps: generate Blip.xcodeproj with XcodeGen -> Release build with xcodebuild
 #        -> draw and bundle the app icon -> sign. Xcode takes care of Info.plist and the resource bundles.
 set -euo pipefail
 
