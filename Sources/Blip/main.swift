@@ -55,8 +55,8 @@ enum Config {
     /// Focus Lines: number of animation frames and seconds per frame; three frames at about 12 fps
     static let focusLinesFrameCount = 3
     static let focusLinesFrameInterval: TimeInterval = 1.0 / 12.0
-    /// Maximum seconds between the two presses of a modifier double-tap. Nil disables it; which key is set in the settings window
-    static let doubleTapInterval: TimeInterval? = 0.3
+    /// Maximum seconds between the two presses of a modifier double-tap. Which key, and turning it off, is set in the settings window
+    static let doubleTapInterval: TimeInterval = 0.3
 }
 
 // MARK: - OverlayView
@@ -281,7 +281,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings: SettingsWindowController
     private let injectedModifierTap: ModifierTapMonitoring?
     private lazy var modifierTap: ModifierTapMonitoring = injectedModifierTap
-        ?? ModifierTapMonitor(interval: Config.doubleTapInterval ?? 0.3) { [weak self] in
+        ?? ModifierTapMonitor(interval: Config.doubleTapInterval) { [weak self] in
             self?.overlay.trigger()
         }
 
@@ -325,10 +325,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Switches the modifier watched for double-taps. Called at launch and from the settings window
     private func setDoubleTap(modifier: ModifierKey) {
-        guard Config.doubleTapInterval != nil else {
-            modifierTap.setModifier(.off)
-            return
-        }
         modifierTap.setModifier(modifier)
     }
 
