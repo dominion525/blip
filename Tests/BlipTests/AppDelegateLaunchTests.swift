@@ -21,7 +21,7 @@ final class AppDelegateLaunchTests: XCTestCase {
         func checkNow() { checks += 1 }
     }
 
-    private let suiteName = "local.blip.tests.launch"
+    private let suiteName = "com.dominion525.blip.tests.launch"
     private var defaults: UserDefaults!
     private var store: SettingsStore!
     private var fakeTap: FakeModifierTap!

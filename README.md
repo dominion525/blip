@@ -92,7 +92,7 @@ Focus Lines   Manga-style speed lines point at the cursor and jitter across thre
 
 ## Where settings live
 
-The hotkey, the double-tap modifier, and the selected effect are stored in UserDefaults (local.blip). Launch at login is registered with SMAppService and appears under Login Items in System Settings.
+The hotkey, the double-tap modifier, and the selected effect are stored in UserDefaults (com.dominion525.blip). Launch at login is registered with SMAppService and appears under Login Items in System Settings.
 
 The display language follows the system setting (English and Japanese). It can be changed for Blip alone under System Settings > General > Language & Region > Applications.
 
