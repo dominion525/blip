@@ -53,6 +53,36 @@ xcrun llvm-cov report .build/debug/BlipCorePackageTests.xctest/Contents/MacOS/Bl
   -instr-profile .build/debug/codecov/default.profdata -ignore-filename-regex='\.build/|Tests/'
 ```
 
+## Release
+
+Pushing a `v*` tag builds, notarizes, and publishes the app.
+
+```
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The tag has to match `MARKETING_VERSION` in project.yml, or the workflow stops before building. The release carries `Blip-<version>.zip`, packaged after the notarization ticket is stapled, so it opens on another Mac without Gatekeeper blocking it.
+
+The workflow reads six repository secrets.
+
+```
+Secret                     Contents
+BUILD_CERTIFICATE_BASE64   Developer ID Application certificate exported as .p12, base64 encoded
+P12_PASSWORD               Export password of that .p12
+KEYCHAIN_PASSWORD          Any string; unlocks the temporary keychain on the runner
+NOTARY_KEY_ID              App Store Connect API key ID
+NOTARY_ISSUER_ID           App Store Connect issuer ID
+NOTARY_KEY_P8_BASE64       The .p8 API key file, base64 encoded
+```
+
+The same notarization runs locally against a profile stored by `xcrun notarytool store-credentials`.
+
+```
+./build.sh
+NOTARY_KEYCHAIN_PROFILE=blip ./Scripts/notarize.sh
+```
+
 ## Usage
 
 Blip puts a cursor icon in the menu bar and does not appear in the Dock.
@@ -145,6 +175,9 @@ build.sh                         Assembles and signs Blip.app
 test.sh                          Runs both test suites
 Scripts/make-icon.swift          App icon artwork (--dark for the white variant)
 Scripts/make-icns.sh             Converts a PNG into an icns
+Scripts/notarize.sh              Submits the app to the notary service and staples the ticket
+.github/workflows/ci.yml         Runs both test suites and build.sh on pull requests
+.github/workflows/release.yml    Builds, notarizes, and publishes a release on a v* tag
 ```
 
 ## Limitations
