@@ -1,5 +1,7 @@
 # Blip
 
+[日本語](README.ja.md)
+
 Find your mouse cursor.
 
 A menu bar utility for macOS that highlights the cursor when you lose it on a multi-display setup. Press a hotkey or double-tap a modifier key and the cursor position lights up. Requires macOS 13 or later.
@@ -21,7 +23,7 @@ build.sh runs these steps.
 
 1. Generate Blip.xcodeproj from project.yml with XcodeGen. This happens on every build so new source files are picked up. Blip.xcodeproj is a build product and is not committed
 2. Build the Release configuration with xcodebuild and copy the resulting Blip.app to the repository root. Xcode takes care of Info.plist and the resource bundles
-3. Draw the app icon with Scripts/make-icon.swift, convert it to icns with Scripts/make-icns.sh, and bundle it. No image files live in the repository. A white-stroke variant is bundled too and used by the About panel in dark mode
+3. Draw the app icon with Scripts/make-icon.swift, convert it to icns with Scripts/make-icns.sh, and bundle it. A white-stroke variant is bundled too and used by the About panel in dark mode
 4. Sign the app. A Developer ID Application certificate from the Keychain is used when present; otherwise the app is signed ad hoc. The CODESIGN_IDENTITY environment variable overrides the identity
 
 ```
@@ -106,13 +108,21 @@ The effect hides itself after 1.2 seconds. While visible it follows the cursor, 
 
 ### Effects
 
-```
-Name          Appearance
-Spotlight     Dims the screen and cuts a ringed hole around the cursor
-Zoom          A hole the size of the screen shrinks onto the cursor
-Flash         The ring blinks and ripples spread out from the cursor
-Focus Lines   Manga-style speed lines point at the cursor and jitter across three frames
-```
+**Spotlight** dims the screen and cuts a ringed hole around the cursor.
+
+![Spotlight](docs/blip-spotlight.webp)
+
+**Zoom** shrinks a hole the size of the screen onto the cursor.
+
+![Zoom](docs/blip-zoom.webp)
+
+**Flash** blinks the ring and spreads ripples out from the cursor.
+
+![Flash](docs/blip-flash.webp)
+
+**Focus Lines** points manga-style speed lines at the cursor and jitters them across three frames.
+
+![Focus Lines](docs/blip-focus-lines.webp)
 
 ## Permissions
 
@@ -178,6 +188,7 @@ Scripts/make-icns.sh             Converts a PNG into an icns
 Scripts/notarize.sh              Submits the app to the notary service and staples the ticket
 .github/workflows/ci.yml         Runs both test suites and build.sh on pull requests
 .github/workflows/release.yml    Builds, notarizes, and publishes a release on a v* tag
+docs/                            Effect recordings shown in this file
 ```
 
 ## Limitations

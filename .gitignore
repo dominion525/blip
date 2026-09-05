@@ -4,3 +4,5 @@ Blip.app/
 .build/
 Blip.xcodeproj/
 .swiftpm/
+Blip.zip
+default.profraw
