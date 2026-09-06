@@ -23,7 +23,7 @@ build.sh runs these steps.
 
 1. Generate Blip.xcodeproj from project.yml with XcodeGen. This happens on every build so new source files are picked up. Blip.xcodeproj is a build product and is not committed
 2. Build the Release configuration with xcodebuild and copy the resulting Blip.app to the repository root. Xcode takes care of Info.plist and the resource bundles
-3. Draw the app icon with Scripts/make-icon.swift, convert it to icns with Scripts/make-icns.sh, and bundle it. A white-stroke variant is bundled too and used by the About panel in dark mode
+3. Draw the app icon with Scripts/make-icon.swift, convert it to icns with Scripts/make-icns.sh, and bundle it. The bundle icon sits on a light gray rounded square; the About panel shows the drawing alone, black in light mode and white in dark mode
 4. Sign the app. A Developer ID Application certificate from the Keychain is used when present; otherwise the app is signed ad hoc. The CODESIGN_IDENTITY environment variable overrides the identity
 
 ```
@@ -184,7 +184,7 @@ Tests/BlipCoreTests/             XCTest (swift test)
 Tests/BlipTests/                 XCTest (xcodebuild test, hosted by the app)
 build.sh                         Assembles and signs Blip.app
 test.sh                          Runs both test suites
-Scripts/make-icon.swift          App icon artwork (--dark for the white variant)
+Scripts/make-icon.swift          App icon artwork (--plate for the background square, --dark for the white variant)
 Scripts/make-icns.sh             Converts a PNG into an icns
 Scripts/notarize.sh              Submits the app to the notary service and staples the ticket
 .github/workflows/ci.yml         Runs both test suites and build.sh on pull requests

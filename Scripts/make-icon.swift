@@ -1,7 +1,8 @@
 // Draws the app icon artwork and writes it as a PNG.
-// Usage: swift Scripts/make-icon.swift <output PNG> [size in pixels] [--dark]
-// A monochrome line drawing of an original arrow cursor with seven rays on a transparent background, no plate.
-// --dark draws white strokes (for the About panel in dark mode).
+// Usage: swift Scripts/make-icon.swift <output PNG> [size in pixels] [--dark] [--plate=RRGGBB]
+// A monochrome line drawing of an original arrow cursor with seven rays.
+// --plate=RRGGBB puts the drawing on a rounded square of that color, on the standard macOS icon grid (824 of 1024, corner radius 185).
+// Without it the background stays transparent. --dark draws white strokes (for the About panel in dark mode).
 
 import AppKit
 import ImageIO
@@ -14,6 +15,7 @@ guard arguments.count >= 2 else {
 }
 let outputURL = URL(fileURLWithPath: arguments[1])
 let isDark = arguments.contains("--dark")
+let plateHex = arguments.first { $0.hasPrefix("--plate=") }.map { String($0.dropFirst("--plate=".count)) }
 let size = arguments.dropFirst(2).compactMap { Int($0) }.first ?? 1024
 let scale = CGFloat(size) / 1024
 
@@ -33,12 +35,25 @@ let ctx = CGContext(
 ctx.scaleBy(x: scale, y: scale)
 ctx.setShouldAntialias(true)
 
-// 1. Leave the background transparent (no plate)
+// 1. The plate: a rounded square on the macOS icon grid, or nothing
+if let hex = plateHex, let value = UInt32(hex, radix: 16) {
+    let plate = CGColor(
+        red: CGFloat((value >> 16) & 0xff) / 255,
+        green: CGFloat((value >> 8) & 0xff) / 255,
+        blue: CGFloat(value & 0xff) / 255,
+        alpha: 1
+    )
+    let plateRect = CGRect(x: 100, y: 100, width: 824, height: 824)
+    ctx.setFillColor(plate)
+    ctx.addPath(CGPath(roundedRect: plateRect, cornerWidth: 185, cornerHeight: 185, transform: nil))
+    ctx.fillPath()
+}
 
 // 2. The drawing, defined in a 742x706 y-down space and scaled into the canvas
 let glyphWidth: CGFloat = 742
 let glyphHeight: CGFloat = 706
-let glyphScale: CGFloat = 980 / glyphWidth
+// The drawing fills 980 of the canvas without a plate and stays inside the plate with one
+let glyphScale: CGFloat = (plateHex == nil ? 980 : 700) / glyphWidth
 let originX = 512 - glyphWidth * glyphScale / 2
 let originY = 512 + glyphHeight * glyphScale / 2
 func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {

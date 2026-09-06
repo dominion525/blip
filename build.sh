@@ -23,14 +23,17 @@ rm -rf "${APP_DIR}"
 cp -R "${DERIVED_DATA}/Build/Products/Release/${APP_NAME}.app" "${APP_DIR}"
 
 # App icon: Scripts/make-icon.swift draws the artwork, which becomes an icns in Resources.
-# The black drawing is the bundle icon; the white one (-dark) is for the About panel in dark mode
+# The black drawing on a light gray plate is the bundle icon. The About panel uses the plain drawing on a transparent background,
+# black (-about) in light mode and white (-about-dark) in dark mode
 echo "==> icon"
 ICON_WORK="${DIR}/.build/icon"
 mkdir -p "${ICON_WORK}"
-swift "${DIR}/Scripts/make-icon.swift" "${ICON_WORK}/Blip.png"
-swift "${DIR}/Scripts/make-icon.swift" "${ICON_WORK}/Blip-dark.png" --dark
+swift "${DIR}/Scripts/make-icon.swift" "${ICON_WORK}/Blip.png" --plate=E6E6E8
+swift "${DIR}/Scripts/make-icon.swift" "${ICON_WORK}/Blip-about.png"
+swift "${DIR}/Scripts/make-icon.swift" "${ICON_WORK}/Blip-about-dark.png" --dark
 "${DIR}/Scripts/make-icns.sh" "${ICON_WORK}/Blip.png" "${CONTENTS}/Resources/${APP_NAME}.icns"
-"${DIR}/Scripts/make-icns.sh" "${ICON_WORK}/Blip-dark.png" "${CONTENTS}/Resources/${APP_NAME}-dark.icns"
+"${DIR}/Scripts/make-icns.sh" "${ICON_WORK}/Blip-about.png" "${CONTENTS}/Resources/${APP_NAME}-about.icns"
+"${DIR}/Scripts/make-icns.sh" "${ICON_WORK}/Blip-about-dark.png" "${CONTENTS}/Resources/${APP_NAME}-about-dark.icns"
 
 # Signing: CODESIGN_IDENTITY if set, else a Developer ID Application certificate from the Keychain if present, else ad hoc.
 # An ad hoc signature changes on every rebuild, which can reset permissions such as Input Monitoring; a certificate keeps the app identity stable.

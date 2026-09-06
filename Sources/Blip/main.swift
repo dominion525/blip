@@ -407,11 +407,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
-    /// Icon for the About panel. Picks the bundled black (Blip.icns) or white (Blip-dark.icns) drawing from the appearance at draw time
+    /// Icon for the About panel: the drawing without the plate, black (Blip-about.icns) or white (Blip-about-dark.icns) by the appearance at draw time
     static func makeAboutIcon(bundle: Bundle = .main) -> NSImage? {
         guard
-            let lightURL = bundle.url(forResource: "Blip", withExtension: "icns"),
-            let darkURL = bundle.url(forResource: "Blip-dark", withExtension: "icns"),
+            let lightURL = bundle.url(forResource: "Blip-about", withExtension: "icns"),
+            let darkURL = bundle.url(forResource: "Blip-about-dark", withExtension: "icns"),
             let light = NSImage(contentsOf: lightURL),
             let dark = NSImage(contentsOf: darkURL)
         else { return nil }
