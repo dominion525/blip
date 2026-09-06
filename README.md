@@ -9,7 +9,7 @@ A menu bar utility for macOS that highlights the cursor when you lose it on a mu
 ## Install
 
 ```
-brew install --cask dominion525/tap/dominion525-blip
+brew install --cask dominion525/tap/blip-cursor
 ```
 
 Installing by the fully qualified name adds the tap and trusts that cask alone.
