@@ -94,6 +94,7 @@ Menu item          Action
 Show Spotlight     Show the effect now
 Settings…          Open the settings window (⌘,)
 About Blip         Open the About panel
+Restart Blip       Quit and launch again
 Quit Blip          Quit (⌘Q)
 ```
 

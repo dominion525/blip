@@ -355,6 +355,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aboutItem.target = self
         menu.addItem(aboutItem)
         menu.addItem(.separator())
+        let restartItem = NSMenuItem(title: L("menu.restart"), action: #selector(restart), keyEquivalent: "")
+        restartItem.target = self
+        menu.addItem(restartItem)
         menu.addItem(NSMenuItem(title: L("menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         return menu
     }
@@ -385,6 +388,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showSettings() {
         settings.show()
+    }
+
+    /// Quits and launches the app again. A detached shell waits for this process to exit before opening the bundle,
+    /// so the new instance never overlaps the old one: the hotkey and the event tap are released before they are taken again
+    @objc func restart() {
+        let script = "while kill -0 \(ProcessInfo.processInfo.processIdentifier) 2>/dev/null; do sleep 0.1; done; /usr/bin/open \"$0\""
+        let relauncher = Process()
+        relauncher.executableURL = URL(fileURLWithPath: "/bin/sh")
+        relauncher.arguments = ["-c", script, Bundle.main.bundleURL.path]
+        do {
+            try relauncher.run()
+        } catch {
+            NSLog("Blip: restart failed to start the relauncher: %@", error.localizedDescription)
+            return
+        }
+        NSLog("Blip: restarting")
+        NSApp.terminate(nil)
     }
 
     /// Icon for the About panel. Picks the bundled black (Blip.icns) or white (Blip-dark.icns) drawing from the appearance at draw time

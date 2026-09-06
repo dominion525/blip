@@ -79,7 +79,7 @@ final class AppDelegateLaunchTests: XCTestCase {
         launch()
         let item = try XCTUnwrap(delegate.statusItem)
         XCTAssertNotNil(item.button?.image, "status bar icon")
-        XCTAssertEqual(item.menu?.items.count, 6)
+        XCTAssertEqual(item.menu?.items.count, 7)
         XCTAssertEqual(item.menu?.items.first?.title, L("menu.showSpotlight"))
     }
 
