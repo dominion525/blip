@@ -53,7 +53,8 @@ a { color: var(--ink); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 0;
+  /* Not the padding shorthand: .wrap sets the sides, and this would reset them to zero. */
+  padding-block: 20px;
 }
 
 .site-name {
@@ -319,7 +320,7 @@ kbd {
 /* footer */
 
 .site-footer {
-  padding: 40px 0 64px;
+  padding-block: 40px 64px;
   border-top: 1px solid var(--line);
   font-size: 14px;
   color: var(--ink-soft);
