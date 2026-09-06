@@ -83,7 +83,9 @@ Blip-<version>.dmg   The same stapled app next to a link to Applications
 
 The disk image is notarized and stapled in its own right, because the quarantine attribute lands on whichever file the browser downloaded.
 
-The workflow reads six repository secrets.
+The workflow then publishes the update: it signs the zip with the Sparkle key, appends an item to the appcast on the `gh-pages` branch, and writes the release notes beside it. That branch is served at <https://blip.dominion525.com>, which is where the app looks for updates. Last it bumps the Homebrew cask.
+
+The workflow reads eight repository secrets.
 
 ```
 Secret                     Contents
@@ -93,6 +95,8 @@ KEYCHAIN_PASSWORD          Any string; unlocks the temporary keychain on the run
 NOTARY_KEY_ID              App Store Connect API key ID
 NOTARY_ISSUER_ID           App Store Connect issuer ID
 NOTARY_KEY_P8_BASE64       The .p8 API key file, base64 encoded
+SPARKLE_PRIVATE_KEY        EdDSA private key that signs each update, exported with Sparkle's generate_keys
+HOMEBREW_TAP_TOKEN         Fine-grained token that can write to dominion525/homebrew-tap
 ```
 
 The same steps run locally against a profile stored by `xcrun notarytool store-credentials`. Building the disk image needs create-dmg (`brew install create-dmg`), and drives Finder to lay out the volume window, so windows open and close while it runs.

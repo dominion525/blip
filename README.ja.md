@@ -83,7 +83,9 @@ Blip-<version>.dmg   同じアプリと、Applications へのリンクを並べ�
 
 ディスクイメージにも個別に公証と staple を行います。ダウンロードした側に quarantine 属性が付くのはイメージそのものだからです。
 
-ワークフローはリポジトリの Secret を 6 つ読みます。
+続けて更新の配信を行います。zip に Sparkle の鍵で署名し、`gh-pages` ブランチの appcast に項目を足し、リリースノートを隣に置きます。このブランチは <https://blip.dominion525.com> で配信され、アプリはここを見に来ます。最後に Homebrew の cask を更新します。
+
+ワークフローはリポジトリの Secret を 8 つ読みます。
 
 ```
 Secret                     内容
@@ -93,6 +95,8 @@ KEYCHAIN_PASSWORD          任意の文字列。ランナー上の一時キー�
 NOTARY_KEY_ID              App Store Connect API キーの Key ID
 NOTARY_ISSUER_ID           App Store Connect の Issuer ID
 NOTARY_KEY_P8_BASE64       .p8 の API キーを base64 にしたもの
+SPARKLE_PRIVATE_KEY        更新に署名する EdDSA の秘密鍵。Sparkle の generate_keys で書き出したもの
+HOMEBREW_TAP_TOKEN         dominion525/homebrew-tap に書き込めるトークン
 ```
 
 同じ手順を手元でも実行できます。資格情報は `xcrun notarytool store-credentials` で保存したプロファイルを使います。ディスクイメージの作成には create-dmg が必要で（`brew install create-dmg`）、ボリュームのウインドウを整えるために Finder を操作するので、実行中にウインドウが開閉します。
