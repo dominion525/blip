@@ -13,7 +13,7 @@
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
       <sparkle:releaseNotesLink>https://blip.dominion525.com/release-notes/0.2.0.html</sparkle:releaseNotesLink>
       <enclosure url="https://github.com/dominion525/blip/releases/download/v0.2.0/Blip-0.2.0.zip"
-                 sparkle:version="0.2.0"
+                 sparkle:version="3"
                  sparkle:shortVersionString="0.2.0"
                  sparkle:edSignature="b0FS49p7Qvqcv/ybzWDlnS+ax0L1Pb6hAZgML3f5n8Hv+g1TehAtPAEIz3Bce610t0J8lfdQ8EmAHnCUE9MTDg==" length="1719080"
                  type="application/octet-stream"/>
