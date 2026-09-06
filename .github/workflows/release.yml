@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
 
 permissions:
   contents: write
@@ -31,8 +31,9 @@ jobs:
           fi
           echo "version=${tag}" >> "${GITHUB_OUTPUT}"
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      # XcodeGen generates the project; create-dmg lays out the disk image window.
+      - name: Install the build tools
+        run: brew install xcodegen create-dmg
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
           HOMEBREW_NO_INSTALL_CLEANUP: 1
@@ -59,7 +60,7 @@ jobs:
       - name: Build
         run: ./build.sh
 
-      - name: Notarize
+      - name: Notarize the app
         env:
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
@@ -72,9 +73,29 @@ jobs:
 
       # Packaged after stapling, so the archive carries the notarization ticket.
       - name: Package the stapled app
-        run: ditto -c -k --keepParent Blip.app "Blip-${{ steps.version.outputs.version }}.zip"
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: ditto -c -k --keepParent Blip.app "Blip-${VERSION}.zip"
+
+      # Built from the stapled app, so the copy a user drags out of the image carries its ticket.
+      # The image gets its own ticket below, because the quarantine attribute lands on the download.
+      - name: Build the disk image
+        run: ./Scripts/make-dmg.sh
+
+      - name: Notarize the disk image
+        env:
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          key="${RUNNER_TEMP}/notary.p8"
+          echo -n "${NOTARY_KEY_P8_BASE64}" | base64 --decode > "${key}"
+          NOTARY_KEY_P8="${key}" ./Scripts/notarize.sh "Blip-${VERSION}.dmg"
+          rm -f "${key}"
 
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" "Blip-${{ steps.version.outputs.version }}.zip" --generate-notes
+          VERSION: ${{ steps.version.outputs.version }}
+        run: gh release create "${GITHUB_REF_NAME}" "Blip-${VERSION}.zip" "Blip-${VERSION}.dmg" --generate-notes

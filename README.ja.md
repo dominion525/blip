@@ -64,7 +64,14 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-タグは project.yml の `MARKETING_VERSION` と一致している必要があり、ズレているとビルドの前にワークフローが止まります。リリースには `Blip-<version>.zip` が付きます。公証チケットを staple した後に固めるので、他の Mac で Gatekeeper に止められることなく開けます。
+タグは project.yml の `MARKETING_VERSION` と一致している必要があり、ズレているとビルドの前にワークフローが止まります。リリースには 2 つのファイルが付き、どちらも他の Mac で Gatekeeper に止められることなく開けます。
+
+```
+Blip-<version>.zip   公証チケットを staple した後に固めたアプリ
+Blip-<version>.dmg   同じアプリと、Applications へのリンクを並べたもの
+```
+
+ディスクイメージにも個別に公証と staple を行います。ダウンロードした側に quarantine 属性が付くのはイメージそのものだからです。
 
 ワークフローはリポジトリの Secret を 6 つ読みます。
 
@@ -78,11 +85,13 @@ NOTARY_ISSUER_ID           App Store Connect の Issuer ID
 NOTARY_KEY_P8_BASE64       .p8 の API キーを base64 にしたもの
 ```
 
-同じ公証を手元でも実行できます。資格情報は `xcrun notarytool store-credentials` で保存したプロファイルを使います。
+同じ手順を手元でも実行できます。資格情報は `xcrun notarytool store-credentials` で保存したプロファイルを使います。ディスクイメージの作成には create-dmg が必要で（`brew install create-dmg`）、ボリュームのウインドウを整えるために Finder を操作するので、実行中にウインドウが開閉します。
 
 ```
 ./build.sh
 NOTARY_KEYCHAIN_PROFILE=blip ./Scripts/notarize.sh
+./Scripts/make-dmg.sh
+NOTARY_KEYCHAIN_PROFILE=blip ./Scripts/notarize.sh Blip-<version>.dmg
 ```
 
 ## 使い方
@@ -94,6 +103,7 @@ Blip はメニューバーにカーソルのアイコンを置き、Dock には�
 Show Spotlight     エフェクトをその場で表示する
 Settings…          設定画面を開く（⌘,）
 About Blip         About パネルを開く
+Restart Blip       終了して起動し直す
 Quit Blip          終了する（⌘Q）
 ```
 
@@ -185,7 +195,9 @@ build.sh                         Blip.app を組み立てて署名する
 test.sh                          2 つのテストスイートを実行する
 Scripts/make-icon.swift          アプリアイコンの元絵（--plate で背景の角丸四角、--dark で白い線の版）
 Scripts/make-icns.sh             PNG を icns に変換する
-Scripts/notarize.sh              公証に提出しチケットを staple する
+Scripts/make-dmg.sh              create-dmg でディスクイメージを作る
+Scripts/make-dmg-background.swift  ディスクイメージのウインドウの背景
+Scripts/notarize.sh              アプリまたはディスクイメージを公証に提出しチケットを staple する
 .github/workflows/ci.yml         pull request で両方のテストと build.sh を実行する
 .github/workflows/release.yml    v* タグでビルド、公証、リリース公開を行う
 docs/                            このファイルに貼っているエフェクトの録画
