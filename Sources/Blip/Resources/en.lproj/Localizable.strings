@@ -2,6 +2,7 @@
 "menu.showSpotlight" = "Show Spotlight";
 "menu.settings" = "Settings…";
 "menu.about" = "About Blip";
+"menu.restart" = "Restart Blip";
 "menu.quit" = "Quit Blip";
 
 /* Settings window */
