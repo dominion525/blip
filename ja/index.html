@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Blip — Find your mouse cursor</title>
+    <title>Blip — マウスカーソルを見つける</title>
     <meta
       name="description"
-      content="A menu bar utility for macOS that highlights the cursor when you lose it on a multi-display setup. Free and open source."
+      content="マルチディスプレイでカーソルを見失ったときに、その位置を目立たせる macOS のメニューバーユーティリティ。無料でオープンソースです。"
     />
-    <link rel="canonical" href="https://blip.dominion525.com/" />
+    <link rel="canonical" href="https://blip.dominion525.com/ja/" />
     <link rel="alternate" hreflang="en" href="https://blip.dominion525.com/" />
     <link
       rel="alternate"
@@ -25,13 +25,13 @@
   </head>
   <body>
     <header class="site-header wrap">
-      <a class="site-name" href="/">
+      <a class="site-name" href="/ja/">
         <img src="/assets/icon.png" width="512" height="512" alt="" />
         Blip
       </a>
       <nav class="lang">
-        <span aria-current="page">English</span> ·
-        <a href="/ja/" hreflang="ja">日本語</a>
+        <a href="/" hreflang="en">English</a> ·
+        <span aria-current="page">日本語</span>
       </nav>
     </header>
 
@@ -43,23 +43,22 @@
             src="/assets/icon.png"
             width="512"
             height="512"
-            alt="The Blip icon"
+            alt="Blip のアイコン"
           />
-          <h1>Find your mouse cursor.</h1>
+          <h1>マウスカーソルを見つける。</h1>
           <p class="lead">
-            Four displays in, the pointer is somewhere. Press a hotkey and Blip
-            lights up wherever it is.
+            ディスプレイを増やすほど、カーソルはどこかへ行きます。ホットキーを押せば、いまある場所が光ります。
           </p>
-          <p class="stance">Free. Open source. Four effects.</p>
+          <p class="stance">無料。オープンソース。エフェクトは 4 種類。</p>
 
           <div class="install">
             <a
               class="download"
               href="https://github.com/dominion525/blip/releases/latest"
-              >Download</a
+              >ダウンロード</a
             >
             <div class="brew">
-              <span class="brew-label">Or with Homebrew</span>
+              <span class="brew-label">Homebrew を使う場合</span>
               <div class="cmd">
                 <code id="brew-command"
                   >brew install --cask dominion525/tap/dominion525-blip</code
@@ -68,16 +67,16 @@
                   class="copy"
                   type="button"
                   data-copy="#brew-command"
-                  data-copied="Copied"
+                  data-copied="コピーしました"
                 >
-                  Copy
+                  コピー
                 </button>
               </div>
             </div>
           </div>
 
           <p class="meta">
-            MIT licensed and open source · macOS 13 or later · Apple Silicon
+            MIT ライセンスのオープンソース · macOS 13 以降 · Apple Silicon
           </p>
         </div>
 
@@ -86,15 +85,14 @@
           src="/assets/blip-focus-lines.webp"
           width="800"
           height="454"
-          alt="Speed lines converge on the mouse cursor over a web page"
+          alt="Web ページの上で、マウスカーソルに集中線が集まる様子"
         />
       </div>
 
       <section class="wrap">
-        <h2>Four ways to light it up</h2>
+        <h2>光らせ方は 4 種類</h2>
         <p class="sub">
-          Pick one in the settings window. The effect hides itself after 1.2
-          seconds.
+          設定ウインドウで選びます。エフェクトは 1.2 秒で消えます。
         </p>
 
         <ul class="effects">
@@ -105,13 +103,10 @@
               width="800"
               height="454"
               loading="lazy"
-              alt="Speed lines converge on the cursor"
+              alt="カーソルに集中線が集まる"
             />
             <h3>Focus Lines</h3>
-            <p>
-              Manga-style speed lines point at the cursor and jitter across
-              three frames.
-            </p>
+            <p>マンガの集中線をカーソルに向け、3 コマで揺らします。</p>
           </li>
           <li>
             <img
@@ -120,10 +115,10 @@
               width="800"
               height="454"
               loading="lazy"
-              alt="The screen dims and a ringed hole opens around the cursor"
+              alt="画面が暗転し、カーソルの周りにリング付きの穴が開く"
             />
             <h3>Spotlight</h3>
-            <p>The screen dims and a ringed hole opens around the cursor.</p>
+            <p>画面を暗転させ、カーソルの周りにリング付きの穴を開けます。</p>
           </li>
           <li>
             <img
@@ -132,10 +127,10 @@
               width="800"
               height="454"
               loading="lazy"
-              alt="A hole the size of the screen shrinks onto the cursor"
+              alt="画面サイズの穴がカーソルに向かって縮む"
             />
             <h3>Zoom</h3>
-            <p>A hole the size of the screen shrinks onto the cursor.</p>
+            <p>画面サイズの穴をカーソルに向かって縮めます。</p>
           </li>
           <li>
             <img
@@ -144,58 +139,55 @@
               width="800"
               height="454"
               loading="lazy"
-              alt="A ring blinks and ripples spread out from the cursor"
+              alt="リングが点滅し、カーソルから波紋が広がる"
             />
             <h3>Flash</h3>
-            <p>The ring blinks and ripples spread out from the cursor.</p>
+            <p>リングを点滅させ、カーソルから波紋を広げます。</p>
           </li>
         </ul>
       </section>
 
       <section class="wrap">
-        <h2>Two ways to fire it</h2>
+        <h2>出し方は 2 通り</h2>
         <p class="sub">
-          Both are configured in the settings window, and either can be turned
-          off.
+          どちらも設定ウインドウで変更でき、切ることもできます。
         </p>
 
         <ul class="triggers">
           <li>
-            <h3>A hotkey</h3>
+            <h3>ホットキー</h3>
             <p>
-              <kbd>⌥</kbd> <kbd>⌘</kbd> <kbd>Z</kbd> by default. Click the field
-              and press the keys you want.
+              既定は <kbd>⌥</kbd> <kbd>⌘</kbd>
+              <kbd>Z</kbd>。フィールドを押して、使いたいキーを入力します。
             </p>
           </li>
           <li>
-            <h3>A double-tapped modifier</h3>
+            <h3>修飾キーの 2 回押し</h3>
             <p>
-              Left <kbd>Control</kbd> by default. Left or right Control, Shift,
-              Option, and Command all work.
+              既定は左 <kbd>Control</kbd>。左右の
+              Control、Shift、Option、Command から選べます。
             </p>
           </li>
         </ul>
 
         <p class="note">
-          While the effect is up it follows the cursor, and the apps underneath
-          stay clickable. With several displays, only the one holding the cursor
-          lights up and the rest dim.
+          表示中はカーソルを追いかけ、下にあるアプリはそのままクリックできます。ディスプレイが複数ある場合、エフェクトはカーソルのある画面にだけ出て、他の画面は暗転します。
         </p>
       </section>
 
       <section class="wrap updates">
-        <h2>Updates</h2>
+        <h2>更新</h2>
         <p>
-          Blip watches for a newer version on its own and checks it against the
-          key the app carries before replacing anything. Installed with Homebrew
-          instead? <code>brew upgrade</code> picks up new versions as well.
+          Blip
+          は新しい版を自分で見に行き、鍵で検証してから入れ替えます。Homebrew
+          で入れている場合は <code>brew upgrade</code> でも上がります。
         </p>
 
         <ol class="releases" data-releases="5" hidden></ol>
 
         <p>
           <a href="https://github.com/dominion525/blip/releases"
-            >See all releases</a
+            >すべての更新を見る</a
           >
         </p>
       </section>
@@ -205,19 +197,19 @@
       <ul>
         <li><a href="https://github.com/dominion525/blip">GitHub</a></li>
         <li>
-          <a href="https://github.com/dominion525/blip/blob/main/README.md"
-            >Documentation</a
+          <a href="https://github.com/dominion525/blip/blob/main/README.ja.md"
+            >ドキュメント</a
           >
         </li>
         <li>
           <a href="https://github.com/dominion525/blip/blob/main/LICENSE"
-            >MIT License</a
+            >MIT ライセンス</a
           >
         </li>
-        <li><a href="/ja/" hreflang="ja">日本語</a></li>
+        <li><a href="/" hreflang="en">English</a></li>
       </ul>
       <p>
-        Blip is a menu bar utility for macOS. It does not appear in the Dock.
+        Blip は macOS のメニューバーユーティリティです。Dock には現れません。
       </p>
     </footer>
 
