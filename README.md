@@ -64,7 +64,14 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The tag has to match `MARKETING_VERSION` in project.yml, or the workflow stops before building. The release carries `Blip-<version>.zip`, packaged after the notarization ticket is stapled, so it opens on another Mac without Gatekeeper blocking it.
+The tag has to match `MARKETING_VERSION` in project.yml, or the workflow stops before building. The release carries two files, either of which opens on another Mac without Gatekeeper blocking it.
+
+```
+Blip-<version>.zip   The app, packaged after its notarization ticket is stapled
+Blip-<version>.dmg   The same stapled app next to a link to Applications
+```
+
+The disk image is notarized and stapled in its own right, because the quarantine attribute lands on whichever file the browser downloaded.
 
 The workflow reads six repository secrets.
 
@@ -78,11 +85,13 @@ NOTARY_ISSUER_ID           App Store Connect issuer ID
 NOTARY_KEY_P8_BASE64       The .p8 API key file, base64 encoded
 ```
 
-The same notarization runs locally against a profile stored by `xcrun notarytool store-credentials`.
+The same steps run locally against a profile stored by `xcrun notarytool store-credentials`. Building the disk image needs create-dmg (`brew install create-dmg`), and drives Finder to lay out the volume window, so windows open and close while it runs.
 
 ```
 ./build.sh
 NOTARY_KEYCHAIN_PROFILE=blip ./Scripts/notarize.sh
+./Scripts/make-dmg.sh
+NOTARY_KEYCHAIN_PROFILE=blip ./Scripts/notarize.sh Blip-<version>.dmg
 ```
 
 ## Usage
@@ -186,7 +195,9 @@ build.sh                         Assembles and signs Blip.app
 test.sh                          Runs both test suites
 Scripts/make-icon.swift          App icon artwork (--plate for the background square, --dark for the white variant)
 Scripts/make-icns.sh             Converts a PNG into an icns
-Scripts/notarize.sh              Submits the app to the notary service and staples the ticket
+Scripts/make-dmg.sh              Builds the disk image with create-dmg
+Scripts/make-dmg-background.swift  Background of the disk image window
+Scripts/notarize.sh              Submits the app or the disk image to the notary service and staples the ticket
 .github/workflows/ci.yml         Runs both test suites and build.sh on pull requests
 .github/workflows/release.yml    Builds, notarizes, and publishes a release on a v* tag
 docs/                            Effect recordings shown in this file
