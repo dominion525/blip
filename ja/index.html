@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Blip — Find your mouse cursor</title>
+    <title>Blip — マウスカーソルを見つける</title>
     <meta
       name="description"
-      content="A menu bar utility for macOS that highlights the cursor when you lose it on a multi-display setup. Free and open source."
+      content="マルチディスプレイでカーソルを見失ったときに、その位置を目立たせる macOS のメニューバーユーティリティ。無料でオープンソースです。"
     />
-    <link rel="canonical" href="https://blip.dominion525.com/" />
+    <link rel="canonical" href="https://blip.dominion525.com/ja/" />
     <link rel="alternate" hreflang="en" href="https://blip.dominion525.com/" />
     <link
       rel="alternate"
@@ -22,23 +22,23 @@
     />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Blip" />
-    <meta property="og:locale" content="en_US" />
-    <meta property="og:locale:alternate" content="ja_JP" />
-    <meta property="og:url" content="https://blip.dominion525.com/" />
-    <meta property="og:title" content="Blip — Find your mouse cursor" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="https://blip.dominion525.com/ja/" />
+    <meta property="og:title" content="Blip — マウスカーソルを見つける" />
     <meta
       property="og:description"
-      content="A menu bar utility for macOS that highlights the cursor when you lose it on a multi-display setup. Free and open source."
+      content="マルチディスプレイでカーソルを見失ったときに、その位置を目立たせる macOS のメニューバーユーティリティ。無料でオープンソースです。"
     />
     <meta
       property="og:image"
-      content="https://blip.dominion525.com/assets/ogp-en.png"
+      content="https://blip.dominion525.com/assets/ogp-ja.png"
     />
     <meta property="og:image:width" content="2400" />
     <meta property="og:image:height" content="1260" />
     <meta
       property="og:image:alt"
-      content="Blip — Find your mouse cursor. macOS, free, open source."
+      content="Blip — マウスカーソルを見つける。macOS、無料、オープンソース。"
     />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@dominion525" />
@@ -47,13 +47,13 @@
   </head>
   <body>
     <header class="site-header wrap">
-      <a class="site-name" href="/">
+      <a class="site-name" href="/ja/">
         <img src="/assets/icon.png" width="512" height="512" alt="" />
         Blip
       </a>
       <nav class="lang">
-        <span aria-current="page">English</span> ·
-        <a href="/ja/" hreflang="ja">日本語</a>
+        <a href="/" hreflang="en">English</a> ·
+        <span aria-current="page">日本語</span>
       </nav>
     </header>
 
@@ -65,14 +65,13 @@
             src="/assets/icon.png"
             width="512"
             height="512"
-            alt="The Blip icon"
+            alt="Blip のアイコン"
           />
-          <h1>Find your mouse cursor.</h1>
+          <h1>マウスカーソルを見つける。</h1>
           <p class="lead">
-            The more displays you add, the further the cursor strays. Press a
-            hotkey and the place it is right now lights up.
+            ディスプレイを増やすほど、カーソルはどこかへ行きます。ホットキーを押せば、いまある場所が光ります。
           </p>
-          <p class="stance">Free. Open source. Four effects.</p>
+          <p class="stance">無料。オープンソース。エフェクトは 4 種類。</p>
 
           <div class="install">
             <a
@@ -84,10 +83,10 @@
                   d="M6.766 11.328c-2.063-.25-3.516-1.734-3.516-3.656 0-.781.281-1.625.75-2.188-.203-.515-.172-1.609.063-2.062.625-.078 1.468.25 1.968.703.594-.187 1.219-.281 1.985-.281.765 0 1.39.094 1.953.265.484-.437 1.344-.765 1.969-.687.218.422.25 1.515.046 2.047.5.593.766 1.39.766 2.203 0 1.922-1.453 3.375-3.547 3.64.531.344.89 1.094.89 1.954v1.625c0 .468.391.734.86.547C13.781 14.359 16 11.53 16 8.03 16 3.61 12.406 0 7.984 0 3.563 0 0 3.61 0 8.031a7.88 7.88 0 0 0 5.172 7.422c.422.156.828-.125.828-.547v-1.25c-.219.094-.5.156-.75.156-1.031 0-1.64-.562-2.078-1.609-.172-.422-.36-.672-.719-.719-.187-.015-.25-.093-.25-.187 0-.188.313-.328.625-.328.453 0 .844.281 1.25.86.313.452.64.655 1.031.655s.641-.14 1-.5c.266-.265.47-.5.657-.656"
                 />
               </svg>
-              Download from GitHub
+              GitHub からダウンロード
             </a>
             <div class="brew">
-              <span class="brew-label">Or with Homebrew</span>
+              <span class="brew-label">Homebrew を使う場合</span>
               <div class="cmd">
                 <code id="brew-command"
                   >brew install --cask dominion525/tap/blip-cursor</code
@@ -96,17 +95,17 @@
                   class="copy"
                   type="button"
                   data-copy="#brew-command"
-                  data-copied="Copied"
+                  data-copied="コピーしました"
                 >
-                  Copy
+                  コピー
                 </button>
               </div>
             </div>
           </div>
 
           <p class="meta">
-            MIT licensed and open source · macOS 13 or later · Apple Silicon ·
-            Signed and notarized
+            MIT ライセンスのオープンソース · macOS 13 以降 · Apple Silicon ·
+            署名・公証済み
           </p>
         </div>
 
@@ -115,15 +114,14 @@
           src="/assets/blip-focus-lines.webp"
           width="800"
           height="454"
-          alt="Speed lines converge on the mouse cursor over a web page"
+          alt="Web ページの上で、マウスカーソルに集中線が集まる様子"
         />
       </div>
 
       <section class="wrap">
-        <h2>Four ways to light it up</h2>
+        <h2>光らせ方は 4 種類</h2>
         <p class="sub">
-          Pick one in the settings window. The effect hides itself after 1.2
-          seconds.
+          設定ウインドウで選びます。エフェクトは 1.2 秒で消えます。
         </p>
 
         <ul class="effects">
@@ -134,13 +132,10 @@
               width="800"
               height="454"
               loading="lazy"
-              alt="Speed lines converge on the cursor"
+              alt="カーソルに集中線が集まる"
             />
-            <h3>Focus Lines</h3>
-            <p>
-              Manga-style speed lines point at the cursor and jitter across
-              three frames.
-            </p>
+            <h3>集中線</h3>
+            <p>マンガの集中線をカーソルに向け、3 コマで揺らします。</p>
           </li>
           <li>
             <img
@@ -149,10 +144,10 @@
               width="800"
               height="454"
               loading="lazy"
-              alt="The screen dims and a ringed hole opens around the cursor"
+              alt="画面が暗転し、カーソルの周りにリング付きの穴が開く"
             />
-            <h3>Spotlight</h3>
-            <p>The screen dims and a ringed hole opens around the cursor.</p>
+            <h3>スポットライト</h3>
+            <p>画面を暗転させ、カーソルの周りにリング付きの穴を開けます。</p>
           </li>
           <li>
             <img
@@ -161,10 +156,10 @@
               width="800"
               height="454"
               loading="lazy"
-              alt="A hole the size of the screen shrinks onto the cursor"
+              alt="画面サイズの穴がカーソルに向かって縮む"
             />
-            <h3>Zoom</h3>
-            <p>A hole the size of the screen shrinks onto the cursor.</p>
+            <h3>ズーム</h3>
+            <p>画面サイズの穴をカーソルに向かって縮めます。</p>
           </li>
           <li>
             <img
@@ -173,76 +168,70 @@
               width="800"
               height="454"
               loading="lazy"
-              alt="A ring blinks and ripples spread out from the cursor"
+              alt="リングが点滅し、カーソルから波紋が広がる"
             />
-            <h3>Flash</h3>
-            <p>The ring blinks and ripples spread out from the cursor.</p>
+            <h3>フラッシュ</h3>
+            <p>リングを点滅させ、カーソルから波紋を広げます。</p>
           </li>
         </ul>
 
         <p class="credit">
-          Recorded over the Japanese Wikipedia article
-          <a href="https://ja.wikipedia.org/wiki/バーフバリ_王の凱旋"
-            >Baahubali 2: The Conclusion</a
-          >
-          (<a href="https://creativecommons.org/licenses/by-sa/4.0/"
+          録画は Wikipedia 日本語版<a
+            href="https://ja.wikipedia.org/wiki/バーフバリ_王の凱旋"
+            >「バーフバリ 王の凱旋」</a
+          >（<a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja"
             >CC BY-SA 4.0</a
-          >);
-          <a
+          >）、<a
             href="https://commons.wikimedia.org/wiki/File:First_look_launch_of_Baahubali_2.jpg"
-            >the photograph in it</a
-          >
-          is by Bollywood Hungama (<a
-            href="https://creativecommons.org/licenses/by/3.0/"
+            >記事内の写真</a
+          >は Bollywood Hungama（<a
+            href="https://creativecommons.org/licenses/by/3.0/deed.ja"
             >CC BY 3.0</a
-          >).
+          >）。
         </p>
       </section>
 
       <section class="wrap">
-        <h2>Two ways to fire it</h2>
+        <h2>出し方は 2 通り</h2>
         <p class="sub">
-          Both are configured in the settings window, and either can be turned
-          off.
+          どちらも設定ウインドウで変更でき、切ることもできます。
         </p>
 
         <ul class="triggers">
           <li>
-            <h3>A hotkey</h3>
+            <h3>ホットキー</h3>
             <p>
-              <kbd>⌥</kbd> <kbd>⌘</kbd> <kbd>Z</kbd> by default. Click the field
-              and press the keys you want.
+              既定は <kbd>⌥</kbd> <kbd>⌘</kbd>
+              <kbd>Z</kbd>。フィールドを押して、使いたいキーを入力します。
             </p>
           </li>
           <li>
-            <h3>A double-tapped modifier</h3>
+            <h3>修飾キーの 2 回押し</h3>
             <p>
-              Left <kbd>Control</kbd> by default. Left or right Control, Shift,
-              Option, and Command all work.
+              既定は左 <kbd>Control</kbd>。左右の
+              Control、Shift、Option、Command から選べます。
             </p>
           </li>
         </ul>
 
         <p class="note">
-          While the effect is up it follows the cursor, and the apps underneath
-          stay clickable. With several displays, only the one holding the cursor
-          lights up and the rest dim.
+          表示中はカーソルを追いかけ、下にあるアプリはそのままクリックできます。ディスプレイが複数ある場合、エフェクトはカーソルのある画面にだけ出て、他の画面は暗転します。
         </p>
       </section>
 
       <section class="wrap updates">
-        <h2>Updates</h2>
+        <h2>更新</h2>
         <p>
-          Blip goes looking for a newer version on its own and verifies it
-          against its key before replacing anything. Installed with Homebrew?
-          <code>brew upgrade</code> picks them up as well.
+          Blip
+          は新しい版を自分で見に行き、鍵で検証してから入れ替えます。Homebrew
+          で入れている場合は <code>brew upgrade</code> でも上がります。
         </p>
 
         <ol class="releases" data-releases="5" hidden></ol>
 
         <p>
           <a href="https://github.com/dominion525/blip/releases"
-            >See all releases</a
+            >すべての更新を見る</a
           >
         </p>
       </section>
@@ -252,16 +241,16 @@
       <ul class="footer-links">
         <li><a href="https://github.com/dominion525/blip">GitHub</a></li>
         <li>
-          <a href="https://github.com/dominion525/blip/blob/main/README.md"
-            >Documentation</a
+          <a href="https://github.com/dominion525/blip/blob/main/README.ja.md"
+            >ドキュメント</a
           >
         </li>
         <li>
           <a href="https://github.com/dominion525/blip/blob/main/LICENSE"
-            >MIT License</a
+            >MIT ライセンス</a
           >
         </li>
-        <li><a href="/ja/" hreflang="ja">日本語</a></li>
+        <li><a href="/" hreflang="en">English</a></li>
       </ul>
 
       <div class="author">

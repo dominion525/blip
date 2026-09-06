@@ -1,0 +1,10 @@
+tasks/
+.claude/
+Blip.app/
+.DS_Store
+.build/
+Blip.xcodeproj/
+.swiftpm/
+Blip.zip
+default.profraw
+Blip-*.dmg
