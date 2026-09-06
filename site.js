@@ -2,14 +2,15 @@
 
 document.querySelectorAll(".copy").forEach(function (button) {
   var source = document.querySelector(button.dataset.copy);
-  var label = button.textContent.trim();
-  button.textContent = label;
+  var timer;
   button.addEventListener("click", function () {
     navigator.clipboard.writeText(source.textContent.trim()).then(
       function () {
-        button.textContent = button.dataset.copied;
-        setTimeout(function () {
-          button.textContent = label;
+        // The two labels sit on top of each other, so swapping them moves nothing.
+        button.classList.add("is-done");
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          button.classList.remove("is-done");
         }, 1600);
       },
       function () {

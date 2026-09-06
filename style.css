@@ -193,6 +193,10 @@ a { color: var(--ink); }
 
 .copy {
   flex: none;
+  /* Both labels are stacked in one cell, so the button is as wide as the longer
+     of the two and does not resize when it is pressed. */
+  display: grid;
+  place-items: center;
   padding: 5px 12px;
   font: inherit;
   font-size: 13px;
@@ -202,6 +206,13 @@ a { color: var(--ink); }
   border-radius: 6px;
   cursor: pointer;
 }
+
+.copy > span { grid-area: 1 / 1; }
+
+.copy .copy-done,
+.copy.is-done .copy-idle { visibility: hidden; }
+
+.copy.is-done .copy-done { visibility: visible; }
 
 .copy:hover { color: var(--ink); }
 
