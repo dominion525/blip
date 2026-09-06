@@ -74,7 +74,10 @@ if (list) {
           var when = published && new Date(published.textContent);
           if (when && !isNaN(when)) {
             var time = document.createElement("time");
-            time.dateTime = when.toISOString().slice(0, 10);
+            // The full timestamp, not a date: the feed publishes in UTC while the text
+            // beside it is formatted for wherever the reader is, and a release cut late
+            // in the day lands on different dates in the two.
+            time.dateTime = when.toISOString();
             time.textContent = new Intl.DateTimeFormat(locale, {
               year: "numeric",
               month: "long",
