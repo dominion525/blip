@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkle's update feed for Blip. The release workflow appends one <item> per release;
+     everything above the items is maintained by hand. -->
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Blip</title>
+    <link>https://blip.dominion525.com/appcast.xml</link>
+    <description>Updates for Blip, a menu bar utility that highlights the mouse cursor.</description>
+    <language>en</language>
+  </channel>
+</rss>
