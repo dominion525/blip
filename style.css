@@ -211,6 +211,24 @@ a { color: var(--ink); }
   color: var(--ink-soft);
 }
 
+/* not found */
+
+.notfound { padding: 80px 0 120px; }
+
+.notfound h1 {
+  margin: 0 0 12px;
+  font-size: clamp(56px, 9vw, 88px);
+  letter-spacing: -0.04em;
+}
+
+.notfound .lead {
+  margin: 0 0 4px;
+  font-size: 19px;
+  color: var(--ink-soft);
+}
+
+.notfound .lead + .lead { margin-bottom: 32px; }
+
 /* sections */
 
 section { padding: 64px 0; border-top: 1px solid var(--line); }
