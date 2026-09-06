@@ -6,6 +6,16 @@
 
 マルチディスプレイでカーソルを見失ったときに、その位置を目立たせる macOS のメニューバーユーティリティです。ホットキーを押すか、修飾キーを 2 回押すと、カーソルのある場所が光ります。macOS 13 以降が必要です。
 
+## インストール
+
+```
+brew install --cask dominion525/tap/dominion525-blip
+```
+
+完全修飾名で入れると tap が追加され、この cask だけが信頼されます。
+
+[リリース](https://github.com/dominion525/blip/releases)には同じアプリが zip とディスクイメージで置いてあり、手で入れることもできます。どちらも Developer ID 証明書で署名し公証済みです。
+
 ## 動作環境
 
 - Apple Silicon の macOS 13 以降（Intel Mac には対応しません）
