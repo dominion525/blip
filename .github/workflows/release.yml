@@ -99,3 +99,45 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
         run: gh release create "${GITHUB_REF_NAME}" "Blip-${VERSION}.zip" "Blip-${VERSION}.dmg" --generate-notes
+
+      # The cask is bumped after the release exists, so a failure here leaves the release intact
+      # and only the cask behind. The token is a fine-grained PAT that can write to the tap alone.
+      - name: Check out the Homebrew tap
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: dominion525/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+
+      - name: Update the Homebrew cask
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          CASK: tap/Casks/dominion525-blip.rb
+        run: |
+          set -euo pipefail
+
+          # The archive on disk is the one that was just uploaded, so there is nothing to download.
+          sha="$(shasum -a 256 "Blip-${VERSION}.zip" | awk '{ print $1 }')"
+
+          # Only the two lines that change per release are touched. Everything else in the cask
+          # stays owned by the tap rather than being generated from here.
+          sed -i '' "s|^  version \".*\"|  version \"${VERSION}\"|" "${CASK}"
+          sed -i '' "s|^  sha256 \".*\"|  sha256 \"${sha}\"|" "${CASK}"
+
+          # A sed that matched nothing would leave the cask stale without failing, so check both.
+          grep -qx "  version \"${VERSION}\"" "${CASK}" || { echo "version was not updated in ${CASK}" >&2; exit 1; }
+          grep -qx "  sha256 \"${sha}\"" "${CASK}" || { echo "sha256 was not updated in ${CASK}" >&2; exit 1; }
+
+          # Never push a cask that does not parse. The tap runs the full tap-syntax check of its
+          # own once this lands, but that is too late to stop a broken file.
+          brew style "${CASK}"
+
+          cd tap
+          if git diff --quiet; then
+            echo "The cask already points at ${VERSION}."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -am "dominion525-blip ${VERSION}"
+          git push

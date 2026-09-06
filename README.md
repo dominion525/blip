@@ -6,6 +6,16 @@ Find your mouse cursor.
 
 A menu bar utility for macOS that highlights the cursor when you lose it on a multi-display setup. Press a hotkey or double-tap a modifier key and the cursor position lights up. Requires macOS 13 or later.
 
+## Install
+
+```
+brew install --cask dominion525/tap/dominion525-blip
+```
+
+Installing by the fully qualified name adds the tap and trusts that cask alone.
+
+The [releases](https://github.com/dominion525/blip/releases) carry the same app as a zip and a disk image for a manual install. Both are signed with a Developer ID certificate and notarized.
+
 ## Requirements
 
 - macOS 13 or later on Apple Silicon (Intel Macs are not supported)
