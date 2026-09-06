@@ -113,12 +113,13 @@ NOTARY_KEYCHAIN_PROFILE=blip ./Scripts/notarize.sh Blip-<version>.dmg
 Blip puts a cursor icon in the menu bar and does not appear in the Dock.
 
 ```
-Menu item          Action
-Show Spotlight     Show the effect now
-Settings…          Open the settings window (⌘,)
-About Blip         Open the About panel
-Restart Blip       Quit and launch again
-Quit Blip          Quit (⌘Q)
+Menu item             Action
+Show Spotlight        Show the effect now
+Settings…             Open the settings window (⌘,)
+About Blip            Open the About panel
+Check for Updates…    Look for a newer version now
+Restart Blip          Quit and launch again
+Quit Blip             Quit (⌘Q)
 ```
 
 Two triggers show the effect; both are configured in the settings window.
@@ -147,6 +148,15 @@ The effect hides itself after 1.2 seconds. While visible it follows the cursor, 
 **Focus Lines** points manga-style speed lines at the cursor and jitters them across three frames.
 
 ![Focus Lines](docs/blip-focus-lines.webp)
+
+## Updates
+
+Blip watches for a newer version on its own, and Check for Updates asks right away. When one is
+out it shows what changed and offers to install it. The download is checked against the key the
+app carries before anything is replaced, and Blip restarts itself into the new version.
+
+Installed with Homebrew instead? `brew upgrade` picks up new versions as well. Either route leaves
+the app where it was, so the Input Monitoring permission and the login item carry over.
 
 ## Permissions
 
@@ -212,8 +222,10 @@ Scripts/make-icns.sh             Converts a PNG into an icns
 Scripts/make-dmg.sh              Builds the disk image with create-dmg
 Scripts/make-dmg-background.swift  Background of the disk image window
 Scripts/notarize.sh              Submits the app or the disk image to the notary service and staples the ticket
+Scripts/make-release-notes.sh    Renders a release's body into the page Sparkle shows
 .github/workflows/ci.yml         Runs both test suites and build.sh on pull requests
 .github/workflows/release.yml    Builds, notarizes, and publishes a release on a v* tag
+.github/workflows/release-notes.yml  Rebuilds the notes page when a release body is edited
 docs/                            Effect recordings shown in this file
 ```
 

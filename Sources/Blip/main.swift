@@ -358,13 +358,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let aboutItem = NSMenuItem(title: L("menu.about"), action: #selector(showAbout), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
+        menu.addItem(.separator())
+        // Checking for updates and restarting both put a different copy of the app on screen,
+        // which is a different kind of thing from looking at it or configuring it
         let updateItem = NSMenuItem(title: L("menu.checkForUpdates"), action: #selector(checkForUpdates), keyEquivalent: "")
         updateItem.target = self
         menu.addItem(updateItem)
-        menu.addItem(.separator())
         let restartItem = NSMenuItem(title: L("menu.restart"), action: #selector(restart), keyEquivalent: "")
         restartItem.target = self
         menu.addItem(restartItem)
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: L("menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         return menu
     }

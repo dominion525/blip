@@ -142,29 +142,30 @@ jobs:
             *) echo "sign_update did not return a signature: ${signature}" >&2; exit 1 ;;
           esac
 
-          # Sparkle shows the release body in its update dialog, so render the same Markdown
-          # GitHub renders and publish it next to the feed.
-          notes="${RUNNER_TEMP}/notes.md"
-          gh release view "${GITHUB_REF_NAME}" --json body --jq .body > "${notes}"
-          body="$(gh api /markdown -f mode=gfm -F text=@"${notes}")"
-          mkdir -p feed/release-notes
-          {
-            printf '<!doctype html>\n<meta charset="utf-8">\n'
-            printf '<title>Blip %s</title>\n' "${VERSION}"
-            printf '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            printf '<style>body{font:14px/1.6 -apple-system,system-ui,sans-serif;margin:1em;color:#1d1d1f}'
-            printf 'code,pre{font-family:ui-monospace,monospace;background:#f5f5f7;border-radius:4px}'
-            printf 'pre{padding:.75em;overflow-x:auto}code{padding:.1em .3em}'
-            printf 'h1,h2,h3{line-height:1.3}img{max-width:100%%}'
-            printf '@media(prefers-color-scheme:dark){body{background:#1d1d1f;color:#f5f5f7}'
-            printf 'code,pre{background:#2c2c2e}}</style>\n'
-            printf '%s\n' "${body}"
-          } > "feed/release-notes/${VERSION}.html"
+          # Sparkle shows the release body in its update dialog. release-notes.yml runs the same
+          # script again whenever the body is edited later, which is when the written notes arrive.
+          ./Scripts/make-release-notes.sh "${GITHUB_REF_NAME}" "feed/release-notes/${VERSION}.html"
 
           # The newest item goes directly after the channel metadata, so the feed reads newest
           # first without rewriting what is already there.
           pubdate="$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')"
           minimum="$(awk '/MACOSX_DEPLOYMENT_TARGET:/ { gsub(/"/, "", $2); print $2 }' project.yml)"
+
+          # sparkle:version is what Sparkle weighs against the installed CFBundleVersion to decide
+          # an update is newer, so the two have to be the same kind of number. project.yml sets
+          # CFBundleVersion from MARKETING_VERSION, which leaves one number to raise per release.
+          #
+          # Going backwards would publish a release nobody is offered, and nothing else would
+          # report that, so refuse a version the feed has already passed.
+          highest="$(grep -o 'sparkle:version="[^"]*"' feed/appcast.xml | cut -d'"' -f2 | sort -V | tail -1)"
+          if [ -n "${highest}" ]; then
+            newest="$(printf '%s\n%s\n' "${VERSION}" "${highest}" | sort -V | tail -1)"
+            if [ "${VERSION}" = "${highest}" ] || [ "${newest}" != "${VERSION}" ]; then
+              echo "${VERSION} is not above ${highest}, which the feed already carries" >&2
+              exit 1
+            fi
+          fi
+
           item="${RUNNER_TEMP}/item.xml"
           cat > "${item}" <<XML
               <item>

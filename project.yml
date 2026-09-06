@@ -65,7 +65,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.dominion525.blip
         PRODUCT_NAME: Blip
         MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "3"
+        CURRENT_PROJECT_VERSION: $(MARKETING_VERSION)
 
   BlipTests:
     type: bundle.unit-test
