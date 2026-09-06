@@ -2,6 +2,7 @@
 "menu.showSpotlight" = "スポットライトを表示";
 "menu.settings" = "設定…";
 "menu.about" = "Blip について";
+"menu.checkForUpdates" = "更新を確認…";
 "menu.restart" = "Blip を再起動";
 "menu.quit" = "Blip を終了";
 

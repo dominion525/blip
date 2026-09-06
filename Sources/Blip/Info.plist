@@ -33,5 +33,11 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright (c) 2026 dominion525 (SATOSHI MATSUMOTO)</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://blip.dominion525.com/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>5528MBB/+R6k5bfeA2ZmhICTjlpCj9odwTiMDo7wD1g=</string>
 </dict>
 </plist>

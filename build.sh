@@ -42,11 +42,28 @@ if [ -z "${IDENTITY}" ] && security find-identity -v -p codesigning | grep -q "D
   IDENTITY="Developer ID Application"
 fi
 if [ -n "${IDENTITY}" ]; then
+  SIGN=(--force --options runtime --timestamp --sign "${IDENTITY}")
   echo "==> codesign (${IDENTITY})"
-  codesign --force --options runtime --timestamp --sign "${IDENTITY}" "${APP_DIR}"
 else
+  SIGN=(--force --sign -)
   echo "==> codesign (ad-hoc)"
-  codesign --force --sign - "${APP_DIR}"
 fi
+
+# Sparkle carries its own executables, and macOS wants each of them signed in its own right.
+# Signed from the inside out, in the order Sparkle documents; --deep is explicitly not the way.
+# Downloader.xpc keeps its entitlements because it runs sandboxed.
+SPARKLE="${CONTENTS}/Frameworks/Sparkle.framework"
+if [ -d "${SPARKLE}" ]; then
+  SPARKLE_VERSION="${SPARKLE}/Versions/B"
+  codesign "${SIGN[@]}" "${SPARKLE_VERSION}/XPCServices/Installer.xpc"
+  codesign "${SIGN[@]}" --preserve-metadata=entitlements "${SPARKLE_VERSION}/XPCServices/Downloader.xpc"
+  codesign "${SIGN[@]}" "${SPARKLE_VERSION}/Autoupdate"
+  codesign "${SIGN[@]}" "${SPARKLE_VERSION}/Updater.app"
+  codesign "${SIGN[@]}" "${SPARKLE}"
+else
+  echo "    Sparkle.framework not found in the bundle; skipping its signatures" >&2
+fi
+
+codesign "${SIGN[@]}" "${APP_DIR}"
 
 echo "==> done: ${APP_DIR}"
