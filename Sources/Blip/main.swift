@@ -16,6 +16,7 @@
 import AppKit
 import BlipCore
 import KeyboardShortcuts
+import Sparkle
 
 // MARK: - Config
 
@@ -284,6 +285,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ?? ModifierTapMonitor(interval: Config.doubleTapInterval) { [weak self] in
             self?.overlay.trigger()
         }
+    /// Sparkle. The feed and the public key that verifies each download live in Info.plist.
+    /// Built lazily so the tests, which never open the menu, do not reach out to the network
+    private lazy var updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
     /// `store` is the settings storage; `modifierTap` is the double-tap monitor (nil creates the real one; tests inject a fake)
     init(store: SettingsStore, modifierTap: ModifierTapMonitoring? = nil) {
@@ -354,6 +358,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let aboutItem = NSMenuItem(title: L("menu.about"), action: #selector(showAbout), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
+        let updateItem = NSMenuItem(title: L("menu.checkForUpdates"), action: #selector(checkForUpdates), keyEquivalent: "")
+        updateItem.target = self
+        menu.addItem(updateItem)
         menu.addItem(.separator())
         let restartItem = NSMenuItem(title: L("menu.restart"), action: #selector(restart), keyEquivalent: "")
         restartItem.target = self
@@ -388,6 +395,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showSettings() {
         settings.show()
+    }
+
+    /// Asks Sparkle to check now. Sparkle owns the dialogs, the download, the signature check,
+    /// and the swap; a check with no newer version reports that it found none
+    @objc func checkForUpdates() {
+        updater.checkForUpdates(nil)
     }
 
     /// Quits and launches the app again. A detached shell waits for this process to exit before opening the bundle,

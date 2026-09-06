@@ -15,6 +15,11 @@ packages:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     # Blip.xcodeproj is generated and not committed, so the resolved version is pinned here instead
     exactVersion: 3.0.1
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    # Pinned for the same reason, and because build.sh signs the framework's nested executables
+    # by the paths this version ships
+    exactVersion: 2.9.6
 
 settings:
   base:
@@ -37,6 +42,7 @@ targets:
     dependencies:
       - package: BlipCore
       - package: KeyboardShortcuts
+      - package: Sparkle
     info:
       path: Sources/Blip/Info.plist
       properties:
@@ -48,6 +54,11 @@ targets:
         CFBundleLocalizations: [en, ja]
         LSUIElement: true
         NSHighResolutionCapable: true
+        # Sparkle: the feed is published by the release workflow; the key verifies each download
+        # against the EdDSA private key held in the Keychain and in the SPARKLE_PRIVATE_KEY secret
+        SUFeedURL: https://blip.dominion525.com/appcast.xml
+        SUPublicEDKey: 5528MBB/+R6k5bfeA2ZmhICTjlpCj9odwTiMDo7wD1g=
+        SUEnableAutomaticChecks: true
         NSHumanReadableCopyright: Copyright (c) 2026 dominion525 (SATOSHI MATSUMOTO)
     settings:
       base:
