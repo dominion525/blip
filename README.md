@@ -212,8 +212,10 @@ Scripts/make-icns.sh             Converts a PNG into an icns
 Scripts/make-dmg.sh              Builds the disk image with create-dmg
 Scripts/make-dmg-background.swift  Background of the disk image window
 Scripts/notarize.sh              Submits the app or the disk image to the notary service and staples the ticket
+Scripts/make-release-notes.sh    Renders a release's body into the page Sparkle shows
 .github/workflows/ci.yml         Runs both test suites and build.sh on pull requests
 .github/workflows/release.yml    Builds, notarizes, and publishes a release on a v* tag
+.github/workflows/release-notes.yml  Rebuilds the notes page when a release body is edited
 docs/                            Effect recordings shown in this file
 ```
 

@@ -212,8 +212,10 @@ Scripts/make-icns.sh             PNG を icns に変換する
 Scripts/make-dmg.sh              create-dmg でディスクイメージを作る
 Scripts/make-dmg-background.swift  ディスクイメージのウインドウの背景
 Scripts/notarize.sh              アプリまたはディスクイメージを公証に提出しチケットを staple する
+Scripts/make-release-notes.sh    リリース本文から Sparkle が見せるページを作る
 .github/workflows/ci.yml         pull request で両方のテストと build.sh を実行する
 .github/workflows/release.yml    v* タグでビルド、公証、リリース公開を行う
+.github/workflows/release-notes.yml  リリース本文が編集されたらノートのページを作り直す
 docs/                            このファイルに貼っているエフェクトの録画
 ```
 

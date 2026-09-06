@@ -1,0 +1,61 @@
+name: Release notes
+
+# The release workflow writes the notes page from whatever body GitHub generated at publish time,
+# which is a list of pull requests. The written notes usually arrive afterwards, by editing the
+# release. This rebuilds the page then, so the feed and the release page never disagree.
+#
+# `published` is deliberately not a trigger: a release created with GITHUB_TOKEN, which is how the
+# release workflow creates it, does not start another workflow. The first page comes from there.
+on:
+  release:
+    types: [edited]
+
+permissions:
+  contents: write
+
+jobs:
+  notes:
+    # Nothing here is built, so this does not need the macOS image.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check out the update feed
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-pages
+          path: feed
+
+      - name: Rebuild the notes page
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+
+          # Releases are cut from v* tags. Anything else has no page in the feed to rebuild.
+          case "${TAG}" in
+            v*) ;;
+            *) echo "${TAG} is not a release tag; nothing to rebuild."; exit 0 ;;
+          esac
+          version="${TAG#v}"
+
+          # The version becomes part of a path, and the tag comes from an event rather than from
+          # this repository, so accept only what a version number can contain.
+          case "${version}" in
+            "" | *[!0-9.]*) echo "${TAG} is not a version tag; refusing to build a path from it." >&2; exit 1 ;;
+          esac
+
+          ./Scripts/make-release-notes.sh "${TAG}" "feed/release-notes/${version}.html"
+
+          cd feed
+          git add -A
+          if git diff --cached --quiet; then
+            echo "The notes for ${version} are already current."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "Release notes for ${version}"
+          git push
