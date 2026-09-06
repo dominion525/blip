@@ -150,6 +150,22 @@ jobs:
           # first without rewriting what is already there.
           pubdate="$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')"
           minimum="$(awk '/MACOSX_DEPLOYMENT_TARGET:/ { gsub(/"/, "", $2); print $2 }' project.yml)"
+
+          # sparkle:version is what Sparkle weighs against the installed CFBundleVersion to decide
+          # an update is newer, so the two have to be the same kind of number. project.yml sets
+          # CFBundleVersion from MARKETING_VERSION, which leaves one number to raise per release.
+          #
+          # Going backwards would publish a release nobody is offered, and nothing else would
+          # report that, so refuse a version the feed has already passed.
+          highest="$(grep -o 'sparkle:version="[^"]*"' feed/appcast.xml | cut -d'"' -f2 | sort -V | tail -1)"
+          if [ -n "${highest}" ]; then
+            newest="$(printf '%s\n%s\n' "${VERSION}" "${highest}" | sort -V | tail -1)"
+            if [ "${VERSION}" = "${highest}" ] || [ "${newest}" != "${VERSION}" ]; then
+              echo "${VERSION} is not above ${highest}, which the feed already carries" >&2
+              exit 1
+            fi
+          fi
+
           item="${RUNNER_TEMP}/item.xml"
           cat > "${item}" <<XML
               <item>
