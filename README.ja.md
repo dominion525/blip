@@ -113,12 +113,13 @@ NOTARY_KEYCHAIN_PROFILE=blip ./Scripts/notarize.sh Blip-<version>.dmg
 Blip はメニューバーにカーソルのアイコンを置き、Dock には現れません。
 
 ```
-メニュー項目        動作
-Show Spotlight     エフェクトをその場で表示する
-Settings…          設定画面を開く（⌘,）
-About Blip         About パネルを開く
-Restart Blip       終了して起動し直す
-Quit Blip          終了する（⌘Q）
+メニュー項目           動作
+Show Spotlight        エフェクトをその場で表示する
+Settings…             設定画面を開く（⌘,）
+About Blip            About パネルを開く
+Check for Updates…    新しい版をその場で探す
+Restart Blip          終了して起動し直す
+Quit Blip             終了する（⌘Q）
 ```
 
 エフェクトを出す方法は 2 つあり、どちらも設定画面で変更できます。
@@ -147,6 +148,12 @@ Quit Blip          終了する（⌘Q）
 **Focus Lines** はマンガの集中線をカーソルに向け、3 コマで揺らします。
 
 ![Focus Lines](docs/blip-focus-lines.webp)
+
+## 更新
+
+Blip は新しい版が出ていないかを自分で見に行きます。「更新を確認」を押せばその場で調べます。新しい版があれば変更点を示して導入を尋ね、アプリが持っている鍵でダウンロードを検証してから入れ替え、新しい版で起動し直します。
+
+Homebrew で入れている場合は `brew upgrade` でも上がります。どちらの経路でもアプリの場所は変わらないので、入力監視の許可とログイン項目の登録はそのまま引き継がれます。
 
 ## 権限
 
