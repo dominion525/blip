@@ -9,7 +9,7 @@
 ## インストール
 
 ```
-brew install --cask dominion525/tap/dominion525-blip
+brew install --cask dominion525/tap/blip-cursor
 ```
 
 完全修飾名で入れると tap が追加され、この cask だけが信頼されます。

@@ -209,7 +209,7 @@ jobs:
       - name: Update the Homebrew cask
         env:
           VERSION: ${{ steps.version.outputs.version }}
-          CASK: tap/Casks/dominion525-blip.rb
+          CASK: tap/Casks/blip-cursor.rb
         run: |
           set -euo pipefail
 
@@ -236,5 +236,5 @@ jobs:
           fi
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -am "dominion525-blip ${VERSION}"
+              commit -am "blip-cursor ${VERSION}"
           git push
