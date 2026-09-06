@@ -4,7 +4,7 @@ import XCTest
 /// The About panel's icon is composed from two drawings in the bundle, one for each appearance.
 /// makeAboutIcon takes the bundle so the real one does not have to be involved; these build a
 /// directory with the resources it looks for and hand that over.
-final class AboutIconTests: XCTestCase {
+final class AboutPanelTests: XCTestCase {
     private var directory: URL!
 
     override func setUpWithError() throws {
@@ -65,5 +65,31 @@ final class AboutIconTests: XCTestCase {
 
     func testGivesNothingWhenNeitherDrawingIsPresent() throws {
         XCTAssertNil(AppDelegate.makeAboutIcon(bundle: try bundle()))
+    }
+
+    // MARK: Credits
+
+    /// Both links sit here rather than on the copyright line, which renders a link attribute
+    /// without ever following it
+    private func links(in credits: NSAttributedString) -> [(text: String, url: URL)] {
+        var found: [(String, URL)] = []
+        credits.enumerateAttribute(.link, in: NSRange(location: 0, length: credits.length)) { value, range, _ in
+            guard let url = value as? URL else { return }
+            found.append((credits.attributedSubstring(from: range).string, url))
+        }
+        return found
+    }
+
+    func testCreditsLinkTheAppAndItsAuthor() {
+        let found = links(in: AppDelegate.makeAboutCredits())
+        XCTAssertEqual(found.map(\.text), [Config.appName, Config.authorHandle])
+        XCTAssertEqual(found.map { $0.url.absoluteString }, [Config.appURL, Config.authorURL])
+    }
+
+    /// The names carry the links, not the addresses, so two of them can be told apart at a glance
+    func testCreditsReadAsNamesRatherThanAddresses() {
+        let credits = AppDelegate.makeAboutCredits()
+        XCTAssertEqual(credits.string, "\(Config.appName) · \(Config.authorHandle)")
+        XCTAssertFalse(credits.string.contains("https://"))
     }
 }

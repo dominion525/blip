@@ -58,6 +58,11 @@ enum Config {
     static let focusLinesFrameInterval: TimeInterval = 1.0 / 12.0
     /// Maximum seconds between the two presses of a modifier double-tap. Which key, and turning it off, is set in the settings window
     static let doubleTapInterval: TimeInterval = 0.3
+    /// What the About panel links to. The names are the link text, so two links can be told apart
+    static let appName = "Blip"
+    static let authorHandle = "dominion525"
+    static let authorURL = "https://dominion525.com/"
+    static let appURL = "https://blip.dominion525.com/"
 }
 
 // MARK: - OverlayView
@@ -438,12 +443,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Both links live here rather than on the copyright line. The panel renders a link attribute
+    /// on that line but never follows it, which looks clickable without being so.
+    /// The names carry the links instead of the addresses, so two of them can be told apart
+    static func makeAboutCredits() -> NSAttributedString {
+        let credits = NSMutableAttributedString()
+        for (index, entry) in [(Config.appName, Config.appURL), (Config.authorHandle, Config.authorURL)].enumerated() {
+            if index > 0 {
+                credits.append(NSAttributedString(string: " · "))
+            }
+            let part = NSMutableAttributedString(string: entry.0)
+            if let url = URL(string: entry.1) {
+                part.addAttribute(.link, value: url, range: NSRange(location: 0, length: part.length))
+            }
+            credits.append(part)
+        }
+        credits.addAttributes(
+            [.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)],
+            range: NSRange(location: 0, length: credits.length)
+        )
+        return credits
+    }
+
     @objc private func showAbout() {
         NSApp.activate(ignoringOtherApps: true)
         var options: [NSApplication.AboutPanelOptionKey: Any] = [:]
         if let icon = Self.makeAboutIcon() {
             options[.applicationIcon] = icon
         }
+        options[.credits] = Self.makeAboutCredits()
+        // The copyright line comes from NSHumanReadableCopyright in Info.plist, as plain text
         NSApp.orderFrontStandardAboutPanel(options: options)
     }
 }
