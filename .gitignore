@@ -1,4 +1,5 @@
 tasks/
+.claude/
 Blip.app/
 .DS_Store
 .build/
