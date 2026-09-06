@@ -23,7 +23,7 @@ build.sh は次の手順を実行します。
 
 1. XcodeGen で project.yml から Blip.xcodeproj を生成する。ビルドのたびに実行するので、追加したソースが自動的に拾われる。Blip.xcodeproj はビルド生成物でありコミットしない
 2. xcodebuild で Release 構成をビルドし、できた Blip.app をリポジトリ直下にコピーする。Info.plist とリソースバンドルは Xcode が扱う
-3. Scripts/make-icon.swift でアプリアイコンを描き、Scripts/make-icns.sh で icns に変換して同梱する。白い線の版も同梱し、ダークモードの About パネルで使う
+3. Scripts/make-icon.swift でアプリアイコンを描き、Scripts/make-icns.sh で icns に変換して同梱する。バンドルのアイコンは薄いグレーの角丸四角に乗せる。About パネルは板なしの線画で、ライトモードは黒、ダークモードは白
 4. アプリに署名する。キーチェーンに Developer ID Application 証明書があればそれを使い、無ければアドホック署名になる。CODESIGN_IDENTITY 環境変数で証明書を指定できる
 
 ```
@@ -183,7 +183,7 @@ Tests/BlipCoreTests/             XCTest（swift test）
 Tests/BlipTests/                 XCTest（xcodebuild test、アプリをホストにする）
 build.sh                         Blip.app を組み立てて署名する
 test.sh                          2 つのテストスイートを実行する
-Scripts/make-icon.swift          アプリアイコンの元絵（--dark で白い線の版）
+Scripts/make-icon.swift          アプリアイコンの元絵（--plate で背景の角丸四角、--dark で白い線の版）
 Scripts/make-icns.sh             PNG を icns に変換する
 Scripts/notarize.sh              公証に提出しチケットを staple する
 .github/workflows/ci.yml         pull request で両方のテストと build.sh を実行する
