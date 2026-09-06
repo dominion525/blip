@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Blip — Find your mouse cursor</title>
+    <title>Blip for macOS — Find your mouse cursor</title>
     <meta
       name="description"
       content="A menu bar utility for macOS that highlights the cursor when you lose it on a multi-display setup. Free and open source."
@@ -25,7 +25,7 @@
     <meta property="og:locale" content="en_US" />
     <meta property="og:locale:alternate" content="ja_JP" />
     <meta property="og:url" content="https://blip.dominion525.com/" />
-    <meta property="og:title" content="Blip — Find your mouse cursor" />
+    <meta property="og:title" content="Blip for macOS — Find your mouse cursor" />
     <meta
       property="og:description"
       content="A menu bar utility for macOS that highlights the cursor when you lose it on a multi-display setup. Free and open source."
@@ -34,8 +34,8 @@
       property="og:image"
       content="https://blip.dominion525.com/assets/ogp-en.png"
     />
-    <meta property="og:image:width" content="2400" />
-    <meta property="og:image:height" content="1260" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
       content="Blip — Find your mouse cursor. macOS, free, open source."
@@ -44,6 +44,34 @@
     <meta name="twitter:site" content="@dominion525" />
     <link rel="icon" href="/assets/icon.png" />
     <link rel="stylesheet" href="/style.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Blip",
+        "description": "A menu bar utility for macOS that highlights the cursor when you lose it on a multi-display setup.",
+        "url": "https://blip.dominion525.com/",
+        "inLanguage": "en",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "macOS 13 or later",
+        "processorRequirements": "Apple Silicon",
+        "downloadUrl": "https://github.com/dominion525/blip/releases/latest",
+        "softwareHelp": "https://github.com/dominion525/blip/blob/main/README.md",
+        "image": "https://blip.dominion525.com/assets/ogp-en.png",
+        "isAccessibleForFree": true,
+        "license": "https://opensource.org/license/mit",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Dominion525",
+          "url": "https://dominion525.com/"
+        }
+      }
+    </script>
   </head>
   <body>
     <header class="site-header wrap">
@@ -92,13 +120,9 @@
                 <code id="brew-command"
                   >brew install --cask dominion525/tap/blip-cursor</code
                 >
-                <button
-                  class="copy"
-                  type="button"
-                  data-copy="#brew-command"
-                  data-copied="Copied"
-                >
-                  Copy
+                <button class="copy" type="button" data-copy="#brew-command">
+                  <span class="copy-idle">Copy</span>
+                  <span class="copy-done">Copied</span>
                 </button>
               </div>
             </div>

@@ -193,6 +193,10 @@ a { color: var(--ink); }
 
 .copy {
   flex: none;
+  /* Both labels are stacked in one cell, so the button is as wide as the longer
+     of the two and does not resize when it is pressed. */
+  display: grid;
+  place-items: center;
   padding: 5px 12px;
   font: inherit;
   font-size: 13px;
@@ -203,6 +207,13 @@ a { color: var(--ink); }
   cursor: pointer;
 }
 
+.copy > span { grid-area: 1 / 1; }
+
+.copy .copy-done,
+.copy.is-done .copy-idle { visibility: hidden; }
+
+.copy.is-done .copy-done { visibility: visible; }
+
 .copy:hover { color: var(--ink); }
 
 .meta {
@@ -210,6 +221,24 @@ a { color: var(--ink); }
   font-size: 14px;
   color: var(--ink-soft);
 }
+
+/* not found */
+
+.notfound { padding: 80px 0 120px; }
+
+.notfound h1 {
+  margin: 0 0 12px;
+  font-size: clamp(56px, 9vw, 88px);
+  letter-spacing: -0.04em;
+}
+
+.notfound .lead {
+  margin: 0 0 4px;
+  font-size: 19px;
+  color: var(--ink-soft);
+}
+
+.notfound .lead + .lead { margin-bottom: 32px; }
 
 /* sections */
 

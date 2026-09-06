@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Blip — マウスカーソルを見つける</title>
+    <title>Blip for macOS — マウスカーソルを見つける</title>
     <meta
       name="description"
       content="マルチディスプレイでカーソルを見失ったときに、その位置を目立たせる macOS のメニューバーユーティリティ。無料でオープンソースです。"
@@ -25,7 +25,7 @@
     <meta property="og:locale" content="ja_JP" />
     <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:url" content="https://blip.dominion525.com/ja/" />
-    <meta property="og:title" content="Blip — マウスカーソルを見つける" />
+    <meta property="og:title" content="Blip for macOS — マウスカーソルを見つける" />
     <meta
       property="og:description"
       content="マルチディスプレイでカーソルを見失ったときに、その位置を目立たせる macOS のメニューバーユーティリティ。無料でオープンソースです。"
@@ -34,8 +34,8 @@
       property="og:image"
       content="https://blip.dominion525.com/assets/ogp-ja.png"
     />
-    <meta property="og:image:width" content="2400" />
-    <meta property="og:image:height" content="1260" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
       content="Blip — マウスカーソルを見つける。macOS、無料、オープンソース。"
@@ -44,6 +44,34 @@
     <meta name="twitter:site" content="@dominion525" />
     <link rel="icon" href="/assets/icon.png" />
     <link rel="stylesheet" href="/style.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Blip",
+        "description": "マルチディスプレイでカーソルを見失ったときに、その位置を目立たせる macOS のメニューバーユーティリティ。",
+        "url": "https://blip.dominion525.com/ja/",
+        "inLanguage": "ja",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "macOS 13 or later",
+        "processorRequirements": "Apple Silicon",
+        "downloadUrl": "https://github.com/dominion525/blip/releases/latest",
+        "softwareHelp": "https://github.com/dominion525/blip/blob/main/README.ja.md",
+        "image": "https://blip.dominion525.com/assets/ogp-ja.png",
+        "isAccessibleForFree": true,
+        "license": "https://opensource.org/license/mit",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "JPY"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Dominion525",
+          "url": "https://dominion525.com/"
+        }
+      }
+    </script>
   </head>
   <body>
     <header class="site-header wrap">
@@ -91,13 +119,9 @@
                 <code id="brew-command"
                   >brew install --cask dominion525/tap/blip-cursor</code
                 >
-                <button
-                  class="copy"
-                  type="button"
-                  data-copy="#brew-command"
-                  data-copied="コピーしました"
-                >
-                  コピー
+                <button class="copy" type="button" data-copy="#brew-command">
+                  <span class="copy-idle">コピー</span>
+                  <span class="copy-done">コピー済</span>
                 </button>
               </div>
             </div>
