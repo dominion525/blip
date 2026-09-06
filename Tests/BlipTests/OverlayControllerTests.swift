@@ -162,4 +162,60 @@ final class OverlayControllerTests: XCTestCase {
         XCTAssertTrue(controller.isVisible, "triggering while visible keeps it visible")
         controller.hide()
     }
+
+    // MARK: Displays coming and going
+
+    /// Plugging a display in or out arrives as this notification. The windows are per display, so
+    /// they are rebuilt; a stale set would leave the new display uncovered
+    private func postScreenParametersChanged() {
+        NotificationCenter.default.post(
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: NSApplication.shared
+        )
+    }
+
+    /// The notification also arrives for changes that leave the displays where they were, such as
+    /// a resolution-independent setting. Rebuilding then would throw away windows for nothing
+    func testScreenChangeKeepsTheWindowsWhenTheDisplaysDidNotMove() {
+        let controller = makeController()
+        controller.syncWindowsWithScreens()
+        let before = controller.windows
+
+        postScreenParametersChanged()
+
+        XCTAssertEqual(controller.windows.count, before.count)
+        XCTAssertTrue(zip(before, controller.windows).allSatisfy { $0 === $1 }, "the same windows are kept")
+        XCTAssertTrue(controller.windows.allSatisfy { !$0.isVisible }, "a change while hidden does not put anything on screen")
+    }
+
+    /// A display arriving or leaving shows up as frames that no longer line up with the screens.
+    /// Standing in for that by moving a window off its screen, since the test cannot add a display
+    func testScreenChangeRebuildsTheWindowsWhenTheFramesNoLongerMatch() throws {
+        let controller = makeController()
+        controller.syncWindowsWithScreens()
+        let before = controller.windows
+        let stale = try XCTUnwrap(before.first)
+        stale.setFrame(stale.frame.insetBy(dx: 10, dy: 10), display: false)
+
+        postScreenParametersChanged()
+
+        XCTAssertEqual(controller.windows.count, NSScreen.screens.count)
+        XCTAssertFalse(controller.windows.contains { $0 === stale }, "the window that no longer fits is replaced")
+        for (window, screen) in zip(controller.windows, NSScreen.screens) {
+            XCTAssertEqual(window.frame, screen.frame, "the rebuilt windows cover their screens again")
+        }
+    }
+
+    func testScreenChangeWhileVisibleKeepsTheEffectOnScreen() {
+        let controller = makeController(autoHide: 5)
+        controller.show()
+        XCTAssertTrue(controller.isVisible)
+
+        postScreenParametersChanged()
+
+        XCTAssertTrue(controller.isVisible)
+        XCTAssertEqual(controller.windows.count, NSScreen.screens.count)
+        XCTAssertTrue(controller.windows.allSatisfy { $0.isVisible }, "the rebuilt windows are presented, not left behind")
+        controller.hide()
+    }
 }
