@@ -8,6 +8,17 @@
     <description>Updates for Blip, a menu bar utility that highlights the mouse cursor.</description>
     <language>en</language>
     <item>
+      <title>Version 0.3.0</title>
+      <pubDate>Mon, 07 Sep 2026 07:53:42 +0000</pubDate>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <sparkle:releaseNotesLink>https://blip.dominion525.com/release-notes/0.3.0.html</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/dominion525/blip/releases/download/v0.3.0/Blip-0.3.0.zip"
+                 sparkle:version="0.3.0"
+                 sparkle:shortVersionString="0.3.0"
+                 sparkle:edSignature="ZEeiE9SLjLSev0rVKV2R1DMJwmGDU1S+Mj0ziSmGHNnzlQUiz9csYe+SiViW5LbE85KysmUWx6WJBi+7pO3nCw==" length="1729839"
+                 type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 0.2.1</title>
       <pubDate>Sun, 06 Sep 2026 16:01:38 +0000</pubDate>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
