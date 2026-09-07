@@ -39,6 +39,70 @@ final class SettingsWindowControllerTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: Effect duration
+
+    func testDurationStepperOffersTheStoredRangeInTenths() {
+        XCTAssertEqual(controller.durationStepper.minValue, SettingsStore.Dismissal.range.lowerBound)
+        XCTAssertEqual(controller.durationStepper.maxValue, SettingsStore.Dismissal.range.upperBound)
+        XCTAssertEqual(controller.durationStepper.increment, SettingsStore.Dismissal.step)
+        XCTAssertFalse(controller.durationStepper.valueWraps, "0.1 does not step round to 5.0")
+    }
+
+    func testLoadingShowsTheStoredDuration() {
+        store.dismissal = .after(2.5)
+        controller.loadValues()
+        XCTAssertEqual(controller.durationStepper.doubleValue, 2.5)
+        XCTAssertEqual(controller.whenFoundCheckbox.state, .off)
+        XCTAssertTrue(controller.durationStepper.isEnabled)
+        XCTAssertTrue(controller.durationLabel.stringValue.contains("2.5"))
+    }
+
+    func testLoadingWaitingToBeFoundChecksTheBoxAndGreysOutTheDuration() {
+        store.dismissal = .whenFound
+        controller.loadValues()
+        XCTAssertEqual(controller.whenFoundCheckbox.state, .on)
+        XCTAssertFalse(controller.durationStepper.isEnabled)
+        XCTAssertEqual(controller.durationLabel.textColor, .disabledControlTextColor)
+    }
+
+    func testSteppingWritesTheDurationAndUpdatesTheReadout() {
+        controller.loadValues()
+        controller.durationStepper.doubleValue = 0.7
+        controller.changeDuration(controller.durationStepper)
+        XCTAssertEqual(store.dismissal, .after(0.7))
+        XCTAssertTrue(controller.durationLabel.stringValue.contains("0.7"))
+    }
+
+    /// Repeated stepping accumulates binary error; storing 1.2000000000000002 would then fail the
+    /// range check on the next launch
+    func testSteppingRoundsToTenths() {
+        controller.loadValues()
+        controller.durationStepper.doubleValue = 1.2000000000000002
+        controller.changeDuration(controller.durationStepper)
+        XCTAssertEqual(store.dismissal, .after(1.2))
+        XCTAssertEqual(controller.durationStepper.doubleValue, 1.2)
+    }
+
+    func testCheckingTheBoxStoresWaitingToBeFound() {
+        controller.loadValues()
+        controller.whenFoundCheckbox.state = .on
+        controller.toggleWhenFound(controller.whenFoundCheckbox)
+        XCTAssertEqual(store.dismissal, .whenFound)
+        XCTAssertFalse(controller.durationStepper.isEnabled)
+    }
+
+    /// Unchecking has to put back a duration, and the one on the stepper is the one that was shown
+    func testUncheckingTheBoxRestoresTheDurationOnTheStepper() {
+        store.dismissal = .after(3.4)
+        controller.loadValues()
+        controller.whenFoundCheckbox.state = .on
+        controller.toggleWhenFound(controller.whenFoundCheckbox)
+        controller.whenFoundCheckbox.state = .off
+        controller.toggleWhenFound(controller.whenFoundCheckbox)
+        XCTAssertEqual(store.dismissal, .after(3.4))
+        XCTAssertTrue(controller.durationStepper.isEnabled)
+    }
+
     // MARK: Window
 
     func testWindowIsTitledClosableAndReusable() throws {

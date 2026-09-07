@@ -58,6 +58,10 @@ enum Config {
     static let focusLinesFrameInterval: TimeInterval = 1.0 / 12.0
     /// Maximum seconds between the two presses of a modifier double-tap. Which key, and turning it off, is set in the settings window
     static let doubleTapInterval: TimeInterval = 0.3
+    /// How far the cursor travels before it counts as having been moved, in points, and how long it
+    /// then holds still before the effect ends. Used when the effect waits to be found
+    static let dismissMovementThreshold: CGFloat = 12
+    static let dismissRestDuration: TimeInterval = 0.3
     /// What the About panel links to. The names are the link text, so two links can be told apart
     static let appName = "Blip"
     static let authorHandle = "dominion525"
@@ -134,7 +138,8 @@ final class OverlayWindow: NSWindow {
 /// Owns one window per display and handles showing, hiding, cursor tracking, and auto-hide
 final class OverlayController {
     private let store: SettingsStore
-    private let autoHideSeconds: TimeInterval
+    /// Overrides what the store says about ending the effect. The tests set it; the app leaves it nil
+    private let dismissalOverride: SettingsStore.Dismissal?
     private(set) var windows: [OverlayWindow] = []
     private var trackingTimer: Timer?
     private var autoHideTimer: Timer?
@@ -143,11 +148,21 @@ final class OverlayController {
     private(set) var renderer: EffectRenderer
     private var shownAt: TimeInterval = 0
     private(set) var isVisible = false
+    /// Watches for the cursor being moved and then set down, which is how the effect ends when it
+    /// is waiting to be found rather than counting seconds
+    private var restWatcher = DismissOnRest(
+        movementThreshold: Config.dismissMovementThreshold,
+        restDuration: Config.dismissRestDuration
+    )
+    private(set) var dismissal: SettingsStore.Dismissal = .after(Config.autoHideSeconds)
+    /// Global monitors for a click or a key press, which also mean the cursor has been found.
+    /// Separate from the double-tap's event tap so that widening one cannot disturb the other
+    private var dismissMonitors: [Any] = []
 
-    /// `store` supplies the effect setting; `autoHideSeconds` is the auto-hide delay. Defaults come from the app settings and Config
-    init(store: SettingsStore = Settings.store, autoHideSeconds: TimeInterval = Config.autoHideSeconds) {
+    /// `store` supplies the settings; `dismissal` overrides how the effect ends, for tests
+    init(store: SettingsStore = Settings.store, dismissal: SettingsStore.Dismissal? = nil) {
         self.store = store
-        self.autoHideSeconds = autoHideSeconds
+        self.dismissalOverride = dismissal
         currentEffect = store.effect
         renderer = makeRenderer(for: currentEffect)
         NotificationCenter.default.addObserver(
@@ -165,7 +180,9 @@ final class OverlayController {
 
     func show() {
         applyEffectSetting()
+        dismissal = dismissalOverride ?? store.dismissal
         shownAt = ProcessInfo.processInfo.systemUptime
+        restWatcher.begin(at: NSEvent.mouseLocation, now: shownAt)
         syncWindowsWithScreens()
         updateSpot(force: true)
         for window in windows {
@@ -176,6 +193,7 @@ final class OverlayController {
         }
         isVisible = true
         startTracking()
+        startDismissMonitors()
         scheduleAutoHide()
         NSLog("Blip: show (%d windows)", windows.count)
     }
@@ -185,6 +203,7 @@ final class OverlayController {
         autoHideTimer = nil
         trackingTimer?.invalidate()
         trackingTimer = nil
+        stopDismissMonitors()
         for window in windows {
             window.orderOut(nil)
         }
@@ -236,6 +255,12 @@ final class OverlayController {
         let timer = Timer(timeInterval: Config.trackingInterval, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             self.updateSpot(force: false)
+            if self.dismissal == .whenFound,
+               self.restWatcher.shouldDismiss(at: NSEvent.mouseLocation, now: ProcessInfo.processInfo.systemUptime) {
+                NSLog("Blip: the cursor was moved and set down")
+                self.hide()
+                return
+            }
             if self.renderer.isAnimated {
                 let elapsed = ProcessInfo.processInfo.systemUptime - self.shownAt
                 for window in self.windows {
@@ -258,12 +283,42 @@ final class OverlayController {
         }
     }
 
+    // MARK: Dismissal by input
+
+    /// Watches for a click while the effect waits to be found. Global monitors see only events aimed
+    /// at other apps, which is all of them here: the overlay ignores the mouse and Blip never takes
+    /// focus. Mouse events need no permission of their own.
+    ///
+    /// Key presses are deliberately not watched. A global monitor only receives them from an app
+    /// trusted for accessibility, and asking for that would let a cursor tool read every keystroke
+    /// on the machine. Blip is for a mouse and a trackpad, so the pointer is enough to go on
+    private func startDismissMonitors() {
+        stopDismissMonitors()
+        guard dismissal == .whenFound else { return }
+        let monitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        ) { [weak self] _ in
+            NSLog("Blip: dismissed by a click")
+            self?.hide()
+        }
+        dismissMonitors = [monitor].compactMap { $0 }
+    }
+
+    private func stopDismissMonitors() {
+        for monitor in dismissMonitors {
+            NSEvent.removeMonitor(monitor)
+        }
+        dismissMonitors = []
+    }
+
     // MARK: Auto-hide
 
     private func scheduleAutoHide() {
         autoHideTimer?.invalidate()
         autoHideTimer = nil
-        let timer = Timer(timeInterval: autoHideSeconds, repeats: false) { [weak self] _ in
+        // Waiting to be found has no deadline; the tracking timer and the monitors end it instead
+        guard case .after(let seconds) = dismissal else { return }
+        let timer = Timer(timeInterval: seconds, repeats: false) { [weak self] _ in
             self?.hide()
         }
         RunLoop.main.add(timer, forMode: .common)

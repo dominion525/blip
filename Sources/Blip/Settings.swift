@@ -11,6 +11,19 @@ final class SettingsStore {
     enum Key {
         static let doubleTapModifier = "doubleTapModifier"
         static let effect = "effect"
+        static let autoHideSeconds = "autoHideSeconds"
+    }
+
+    /// What the effect does about ending itself
+    enum Dismissal: Equatable {
+        /// Ends on its own after this many seconds
+        case after(TimeInterval)
+        /// Stays until its user shows they have found the cursor
+        case whenFound
+
+        /// The range the settings window offers, in seconds
+        public static let range: ClosedRange<TimeInterval> = 0.1...5.0
+        static let step: TimeInterval = 0.1
     }
 
     init(defaults: UserDefaults) {
@@ -27,6 +40,24 @@ final class SettingsStore {
     var effect: Effect {
         get { Effect(rawValue: defaults.string(forKey: Key.effect) ?? "") ?? Effect.default }
         set { defaults.set(newValue.rawValue, forKey: Key.effect) }
+    }
+
+    /// How the effect ends. Stored as seconds, with zero standing for waiting to be found;
+    /// an unset or out-of-range value falls back to the default rather than to something unusable
+    var dismissal: Dismissal {
+        get {
+            guard defaults.object(forKey: Key.autoHideSeconds) != nil else { return .after(Config.autoHideSeconds) }
+            let seconds = defaults.double(forKey: Key.autoHideSeconds)
+            if seconds == 0 { return .whenFound }
+            guard Dismissal.range.contains(seconds) else { return .after(Config.autoHideSeconds) }
+            return .after(seconds)
+        }
+        set {
+            switch newValue {
+            case .after(let seconds): defaults.set(seconds, forKey: Key.autoHideSeconds)
+            case .whenFound: defaults.set(0, forKey: Key.autoHideSeconds)
+            }
+        }
     }
 }
 
