@@ -3,12 +3,28 @@
 <title>Blip 0.3.0</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>body{font:14px/1.6 -apple-system,system-ui,sans-serif;margin:1em;color:#1d1d1f}code,pre{font-family:ui-monospace,monospace;background:#f5f5f7;border-radius:4px}pre{padding:.75em;overflow-x:auto}code{padding:.1em .3em}h1,h2,h3{line-height:1.3}img{max-width:100%}@media(prefers-color-scheme:dark){body{background:#1d1d1f;color:#f5f5f7}code,pre{background:#2c2c2e}}</style>
-<h2>What's Changed</h2>
+<p>Blip is a menu bar utility that finds your mouse cursor. Press a hotkey or double-tap a modifier key, and the cursor position lights up.</p>
+<h2>What changed since 0.2.1</h2>
 <ul>
-<li>Cover the About icon and the display changes by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/dominion525/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/dominion525">@dominion525</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5366176163" data-permission-text="Title is private" data-url="https://github.com/dominion525/blip/issues/15" data-hovercard-type="pull_request" data-hovercard-url="/dominion525/blip/pull/15/hovercard" href="https://github.com/dominion525/blip/pull/15">dominion525/blip#15</a></li>
-<li>Rename the cask to blip-cursor by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/dominion525/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/dominion525">@dominion525</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5366451193" data-permission-text="Title is private" data-url="https://github.com/dominion525/blip/issues/16" data-hovercard-type="pull_request" data-hovercard-url="/dominion525/blip/pull/16/hovercard" href="https://github.com/dominion525/blip/pull/16">dominion525/blip#16</a></li>
-<li>Link the app's site and its author from the About panel by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/dominion525/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/dominion525">@dominion525</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5366658332" data-permission-text="Title is private" data-url="https://github.com/dominion525/blip/issues/17" data-hovercard-type="pull_request" data-hovercard-url="/dominion525/blip/pull/17/hovercard" href="https://github.com/dominion525/blip/pull/17">dominion525/blip#17</a></li>
-<li>Let the effect stay up as long as its user needs it by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/dominion525/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/dominion525">@dominion525</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5371036619" data-permission-text="Title is private" data-url="https://github.com/dominion525/blip/issues/20" data-hovercard-type="pull_request" data-hovercard-url="/dominion525/blip/pull/20/hovercard" href="https://github.com/dominion525/blip/pull/20">dominion525/blip#20</a></li>
-<li>Bump the version to 0.3.0 by <a class="user-mention notranslate" data-hovercard-type="user" data-hovercard-url="/users/dominion525/hovercard" data-octo-click="hovercard-link-click" data-octo-dimensions="link_type:self" href="https://github.com/dominion525">@dominion525</a> in <a class="issue-link js-issue-link" data-error-text="Failed to load title" data-id="5371448890" data-permission-text="Title is private" data-url="https://github.com/dominion525/blip/issues/21" data-hovercard-type="pull_request" data-hovercard-url="/dominion525/blip/pull/21/hovercard" href="https://github.com/dominion525/blip/pull/21">dominion525/blip#21</a></li>
+<li><strong>The effect lasts as long as you want it to.</strong> It used to end after a fixed 1.2 seconds, which is a guess that holds on a laptop screen and not on a projector. Settings now offers 0.1 to 5.0 seconds in tenths, and an option to keep it up until you use the pointer. That one ends when the cursor is moved and then set down, or on a click of any mouse button</li>
+<li><strong>The About panel links out.</strong> The app's site and its author are now clickable</li>
 </ul>
-<p><strong>Full Changelog</strong>: <a class="commit-link" href="https://github.com/dominion525/blip/compare/v0.2.1...v0.3.0">dominion525/blip@<tt>v0.2.1...v0.3.0</tt></a></p>
+<h2>Install</h2>
+<pre class="notranslate"><code class="notranslate">brew install --cask dominion525/tap/blip-cursor
+</code></pre>
+<p>Or download <code class="notranslate">Blip-0.3.0.zip</code> or <code class="notranslate">Blip-0.3.0.dmg</code> and move <code class="notranslate">Blip.app</code> into Applications. The app is signed with a Developer ID certificate and notarized, so it opens without a Gatekeeper warning.</p>
+<p>Replacing an installed copy in Applications keeps its settings and the Input Monitoring permission.</p>
+<p>Requires macOS 13 or later on Apple Silicon. Intel Macs are not supported.</p>
+<hr>
+<p>Blip はマウスカーソルを見つけるためのメニューバーユーティリティです。ホットキーを押すか修飾キーを 2 回押すと、カーソルの位置が光ります。</p>
+<h2>0.2.1 からの変更</h2>
+<ul>
+<li><strong>エフェクトの表示時間を選べるようになりました。</strong> これまでは 1.2 秒で固定でした。手元の画面では妥当でも、プロジェクターでは足りないことがあります。設定から 0.1 〜 5.0 秒を 0.1 刻みで指定できるようになり、加えて「操作するまで消さない」を選べます。この場合はカーソルを動かして止めたとき、またはマウスのボタンを押したときに消えます</li>
+<li><strong>About パネルからサイトへ飛べるようになりました。</strong> アプリのサイトと作者のサイトがクリックできます</li>
+</ul>
+<h2>インストール</h2>
+<pre class="notranslate"><code class="notranslate">brew install --cask dominion525/tap/blip-cursor
+</code></pre>
+<p>または <code class="notranslate">Blip-0.3.0.zip</code> か <code class="notranslate">Blip-0.3.0.dmg</code> をダウンロードし、<code class="notranslate">Blip.app</code> を Applications に移します。アプリは Developer ID 証明書で署名し公証済みなので、Gatekeeper の警告なしに開きます。</p>
+<p>Applications に入っている版を置き換えても、設定と入力監視の許可は保持されます。</p>
+<p>Apple Silicon の macOS 13 以降が必要です。Intel Mac には対応しません。</p>
