@@ -21,7 +21,7 @@ final class OverlayControllerTests: XCTestCase {
     }
 
     private func makeController(autoHide: TimeInterval = 1.2) -> OverlayController {
-        OverlayController(store: store, autoHideSeconds: autoHide)
+        OverlayController(store: store, dismissal: .after(autoHide))
     }
 
     // MARK: Window creation and configuration
@@ -153,6 +153,33 @@ final class OverlayControllerTests: XCTestCase {
         }
         XCTAssertFalse(controller.isVisible, "hides on its own")
         XCTAssertTrue(controller.windows.allSatisfy { !$0.isVisible })
+    }
+
+    /// With no override the controller follows the setting, and it re-reads it on every show so a
+    /// change made while the window is open takes effect at the next trigger
+    func testShowReadsTheDismissalFromTheStore() {
+        let controller = OverlayController(store: store)
+        store.dismissal = .whenFound
+        controller.show()
+        XCTAssertEqual(controller.dismissal, .whenFound)
+        store.dismissal = .after(2)
+        controller.show()
+        XCTAssertEqual(controller.dismissal, .after(2))
+        controller.hide()
+    }
+
+    /// Waiting to be found has no deadline. The ways out are the cursor coming to rest, a click, and
+    /// a key press, none of which a test can produce, so this only checks that nothing hides it
+    func testWaitingToBeFoundDoesNotHideOnItsOwn() {
+        let controller = OverlayController(store: store, dismissal: .whenFound)
+        controller.show()
+        let deadline = Date(timeIntervalSinceNow: 0.15)
+        while Date() < deadline {
+            RunLoop.main.run(mode: .default, before: Date(timeIntervalSinceNow: 0.01))
+        }
+        XCTAssertTrue(controller.isVisible, "still up with no timer to end it")
+        controller.hide()
+        XCTAssertFalse(controller.isVisible)
     }
 
     func testTriggerWhileVisibleKeepsShowing() {

@@ -40,6 +40,33 @@ final class SettingsTests: XCTestCase {
         }
     }
 
+    func testDismissalDefaultsToTheConfiguredDuration() {
+        XCTAssertEqual(store.dismissal, .after(Config.autoHideSeconds))
+    }
+
+    func testDismissalRoundTripsEveryStepInRange() {
+        var seconds = SettingsStore.Dismissal.range.lowerBound
+        while seconds <= SettingsStore.Dismissal.range.upperBound {
+            store.dismissal = .after(seconds)
+            XCTAssertEqual(store.dismissal, .after(seconds))
+            seconds += SettingsStore.Dismissal.step
+        }
+    }
+
+    /// Waiting to be found is stored as zero seconds, which no duration in range can collide with
+    func testWaitingToBeFoundRoundTrips() {
+        store.dismissal = .whenFound
+        XCTAssertEqual(store.dismissal, .whenFound)
+        XCTAssertEqual(defaults.double(forKey: SettingsStore.Key.autoHideSeconds), 0)
+    }
+
+    func testDurationsOutsideTheRangeFallBackToTheDefault() {
+        for seconds in [-1.0, 0.05, 5.1, 600.0] {
+            defaults.set(seconds, forKey: SettingsStore.Key.autoHideSeconds)
+            XCTAssertEqual(store.dismissal, .after(Config.autoHideSeconds), "\(seconds) is not offered")
+        }
+    }
+
     /// Values from older versions or corrupted values fall back to the defaults
     func testUnknownStoredValuesFallBackToDefaults() {
         defaults.set("ripple", forKey: SettingsStore.Key.effect)

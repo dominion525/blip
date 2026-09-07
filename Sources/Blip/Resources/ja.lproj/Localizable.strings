@@ -16,6 +16,9 @@
 "settings.permission.openSystemSettings" = "システム設定を開く";
 "settings.section.effect" = "エフェクト";
 "settings.effect" = "エフェクト:";
+"settings.duration" = "表示時間:";
+"settings.duration.seconds" = "%.1f 秒";
+"settings.duration.whenFound" = "操作するまで消さない";
 "settings.section.general" = "一般";
 "settings.launchAtLogin" = "ログイン時に起動";
 "settings.loginItem.requiresApproval" = "システム設定での承認待ちです";

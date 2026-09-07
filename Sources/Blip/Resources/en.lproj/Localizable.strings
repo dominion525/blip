@@ -16,6 +16,9 @@
 "settings.permission.openSystemSettings" = "Open System Settings";
 "settings.section.effect" = "Effect";
 "settings.effect" = "Effect:";
+"settings.duration" = "Duration:";
+"settings.duration.seconds" = "%.1f s";
+"settings.duration.whenFound" = "Don't hide until input";
 "settings.section.general" = "General";
 "settings.launchAtLogin" = "Launch at login";
 "settings.loginItem.requiresApproval" = "Waiting for approval in System Settings";

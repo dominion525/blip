@@ -18,6 +18,10 @@ final class SettingsWindowController: NSWindowController {
     let permissionButton = NSButton(title: L("settings.permission.openSystemSettings"), target: nil, action: nil)
     private let permissionRow = NSStackView()
     let effectPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
+    let durationStepper = NSStepper()
+    let durationLabel = NSTextField(labelWithString: "")
+    let whenFoundCheckbox = NSButton(checkboxWithTitle: L("settings.duration.whenFound"), target: nil, action: nil)
+    private let durationRow = NSStackView()
     let launchAtLoginCheckbox = NSButton(checkboxWithTitle: L("settings.launchAtLogin"), target: nil, action: nil)
     let loginItemLabel = NSTextField(labelWithString: "")
     let loginItemButton = NSButton(title: L("settings.loginItem.openSystemSettings"), target: nil, action: nil)
@@ -56,6 +60,20 @@ final class SettingsWindowController: NSWindowController {
         effectPopUp.target = self
         effectPopUp.action = #selector(changeEffect(_:))
 
+        durationStepper.minValue = SettingsStore.Dismissal.range.lowerBound
+        durationStepper.maxValue = SettingsStore.Dismissal.range.upperBound
+        durationStepper.increment = SettingsStore.Dismissal.step
+        durationStepper.valueWraps = false
+        durationStepper.target = self
+        durationStepper.action = #selector(changeDuration(_:))
+        durationRow.setViews([durationLabel, durationStepper], in: .leading)
+        durationRow.orientation = .horizontal
+        durationRow.spacing = 6
+        durationRow.alignment = .centerY
+
+        whenFoundCheckbox.target = self
+        whenFoundCheckbox.action = #selector(toggleWhenFound(_:))
+
         launchAtLoginCheckbox.target = self
         launchAtLoginCheckbox.action = #selector(toggleLaunchAtLogin(_:))
 
@@ -81,6 +99,8 @@ final class SettingsWindowController: NSWindowController {
             [NSGridCell.emptyContentView, permissionRow],
             [sectionLabel(L("settings.section.effect")), NSGridCell.emptyContentView],
             [fieldLabel(L("settings.effect")), effectPopUp],
+            [fieldLabel(L("settings.duration")), durationRow],
+            [NSGridCell.emptyContentView, whenFoundCheckbox],
             [sectionLabel(L("settings.section.general")), NSGridCell.emptyContentView],
             [NSGridCell.emptyContentView, launchAtLoginCheckbox],
             [NSGridCell.emptyContentView, loginItemRow],
@@ -91,7 +111,7 @@ final class SettingsWindowController: NSWindowController {
         grid.column(at: 1).xPlacement = .leading
         grid.rowAlignment = .firstBaseline
         // Section headers span both columns, left-aligned. Sections after the first get extra spacing above
-        for index in [0, 4, 6] {
+        for index in [0, 4, 8] {
             grid.mergeCells(inHorizontalRange: NSRange(location: 0, length: 2), verticalRange: NSRange(location: index, length: 1))
             grid.cell(atColumnIndex: 0, rowIndex: index).xPlacement = .leading
             grid.row(at: index).topPadding = index == 0 ? 0 : 16
@@ -131,8 +151,31 @@ final class SettingsWindowController: NSWindowController {
     func loadValues() {
         doubleTapPopUp.selectItem(at: ModifierKey.allCases.firstIndex(of: store.doubleTapModifier) ?? 0)
         effectPopUp.selectItem(at: Effect.allCases.firstIndex(of: store.effect) ?? 0)
+        loadDismissal()
         updateLoginItemStatus()
         updatePermissionStatus()
+    }
+
+    /// Puts the stored dismissal into the stepper and the checkbox. Waiting to be found leaves the
+    /// stepper on the last duration it was given, so unchecking the box restores it
+    func loadDismissal() {
+        switch store.dismissal {
+        case .after(let seconds):
+            durationStepper.doubleValue = seconds
+            whenFoundCheckbox.state = .off
+        case .whenFound:
+            durationStepper.doubleValue = Config.autoHideSeconds
+            whenFoundCheckbox.state = .on
+        }
+        updateDurationControls()
+    }
+
+    /// Greys out the duration while the effect waits to be found, where a duration means nothing
+    func updateDurationControls() {
+        let waiting = whenFoundCheckbox.state == .on
+        durationStepper.isEnabled = !waiting
+        durationLabel.textColor = waiting ? .disabledControlTextColor : .labelColor
+        durationLabel.stringValue = String(format: L("settings.duration.seconds"), durationStepper.doubleValue)
     }
 
     /// Reflects the login item state in the checkbox and its note.
@@ -190,6 +233,21 @@ final class SettingsWindowController: NSWindowController {
         guard Effect.allCases.indices.contains(index) else { return }
         store.effect = Effect.allCases[index]
         NSLog("Blip: effect set to %@", store.effect.rawValue)
+    }
+
+    @objc func changeDuration(_ sender: NSStepper) {
+        // The stepper works in tenths, and its own arithmetic leaves values like 1.2000000000000002
+        let seconds = (sender.doubleValue * 10).rounded() / 10
+        sender.doubleValue = seconds
+        store.dismissal = .after(seconds)
+        updateDurationControls()
+        NSLog("Blip: duration set to %.1f s", seconds)
+    }
+
+    @objc func toggleWhenFound(_ sender: NSButton) {
+        store.dismissal = sender.state == .on ? .whenFound : .after(durationStepper.doubleValue)
+        updateDurationControls()
+        NSLog("Blip: dismissal set to %@", sender.state == .on ? "when found" : "a duration")
     }
 
     @objc private func openSystemSettings() {
